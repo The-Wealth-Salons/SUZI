@@ -1,0 +1,40 @@
+{
+  "productKey": "suzi",
+  "brandName": "SUZI",
+  "family": "The Wealth Salons",
+  "schemaVersion": "2026-10-30",
+  "status": "approved_visual_direction_trademark_pending",
+  "publicRelease": "review_candidate",
+  "personalPhotosIncluded": false,
+  "source": "founder-approved AI-generated direction, converted to new vector paths",
+  "assets": {
+    "primaryLockup": "brand/logo/suzi-horizontal-primary.svg",
+    "wordmark": "brand/logo/suzi-wordmark-forest.svg",
+    "symbol": "brand/logo/suzi-symbol-color.svg",
+    "appIcon": null,
+    "favicon": "site/assets/suzi-symbol-color.svg",
+    "socialPreview": null,
+    "brandBoard": null
+  },
+  "lastReviewed": "2026-10-30",
+  "files": {
+    ".github/PULL_REQUEST_TEMPLATE.md": "38df817a2ac3566160b8128982ca8d45c45eb85156e0d76c5077b86f9a884e4d",
+    ".github/workflows/publication-gate.yml": "9d1d1f42abd27978e1aa2d130f922b913880f739bda53afe899efa28c662d739",
+    "README.md": "40b38af1f775e5ce8002e06b8c9c48a9874d0a46a69167df6ff2151ca355a33a",
+    "brand/README.md": "bc5b9ce417fab1ec95317319c0b99f779aa3a99f6854c2de8890644019980e79",
+    "brand/logo/suzi-horizontal-primary.svg": "f63a16dc2fbde44f88898d6e8cffc943408439f5e648c6564bf11f8ca7804f76",
+    "brand/logo/suzi-stacked-primary.svg": "08ee104404c8b577c032345b2ca027cf07e833423ee5023830c6aa53c5c0b5ab",
+    "brand/logo/suzi-symbol-color.svg": "931170fbdbe64d8deef401ceb3e6e067e098e0c8467522741e539618e858e9d1",
+    "brand/logo/suzi-wordmark-forest.svg": "e420753079a6ba8e6783a1a9040f60f3982cd0e48e8bab67580f59017a2002d0",
+    "brand/logo/suzi-wordmark-ivory.svg": "7f881af1fe9bade035265b0ce20aa2ae8dd7127603932efd06c15b312481eaf8",
+    "brand/tokens/suzi-tokens.css": "dfb8bb610bdce61f3ef30cee1f95384814992a90f1ae020988663b0c025c085b",
+    "brand/tokens/suzi-tokens.json": "5dd1ddf543415003e4a9a1ed25943d021ba60c4ceddbf29f80809a37044a0b1f",
+    "docs/PUBLICATION_REVIEW.md": "ef6c3e8869bb9bdc48f21d144c2d2cdfe2d70cebb22874908893a5f32b7e930a",
+    "scripts/publication_preflight.py": "d5751dac3cce6d8052bb094bfc1ce6451aad73dff336112023666f17045425dd",
+    "site/assets/suzi-landscape-waves.svg": "62e2e7748824f25e91814478385d5e021bdb8e7f14490f8ac160c339ac4ba766",
+    "site/assets/suzi-symbol-color.svg": "931170fbdbe64d8deef401ceb3e6e067e098e0c8467522741e539618e858e9d1",
+    "site/index.html": "8fe0bd7c54aa9e7aa101d096ad734cd5fda408e51fd246675b5ab64c1228ad84",
+    "site/styles.css": "ca86744175be66dd7bb3677fccd4e3a0679647ac77fa21ad11375d9ce09fd467",
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  }
+}

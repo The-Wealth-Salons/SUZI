@@ -1,0 +1,35 @@
+{
+  "name": "SUZI",
+  "version": "0.1-draft",
+  "parent": "The Wealth Salons",
+  "colors": {
+    "forest": "#0B3B38",
+    "deep": "#07332F",
+    "river": "#2D6F71",
+    "sage": "#71816A",
+    "gold": "#EBA13F",
+    "terracotta": "#BD694E",
+    "coral": "#E5A28B",
+    "cream": "#FBF6ED",
+    "white": "#FFFFFF",
+    "light": "#F4EBDE",
+    "ink": "#1E3432",
+    "quiet": "#566B66"
+  },
+  "contrast": {
+    "forest-on-cream": 11.5,
+    "forest-on-white": 12.38,
+    "cream-on-forest": 11.5,
+    "cream-on-deep": 12.8,
+    "river-on-cream": 5.38,
+    "sage-on-cream": 3.86,
+    "terracotta-on-cream": 3.68,
+    "gold-on-cream": 2.01
+  },
+  "typography": {
+    "display": "EB Garamond, Georgia, serif",
+    "ui": "Inter, system-ui, sans-serif",
+    "code": "ui-monospace, monospace"
+  },
+  "status": "Founder-approved visual identity v0.1; trademark clearance pending; no deployment claim"
+}

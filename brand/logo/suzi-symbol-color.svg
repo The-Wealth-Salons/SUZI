@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="260" viewBox="0 0 260 260" role="img" aria-label="SUZI brand artwork"><g transform="translate(0 0) scale(1)"><defs>
+<linearGradient id="gSun" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F6BE68"/><stop offset="1" stop-color="#EBA13F"/></linearGradient>
+<linearGradient id="gRiver" x1="0" y1=".15" x2=".9" y2="1"><stop stop-color="#07332F"/><stop offset=".62" stop-color="#2D6F71"/><stop offset="1" stop-color="#8BB8AB"/></linearGradient>
+</defs>
+<!-- A stylized rising sun, meandering river, and two leaves. Made from original vector paths. -->
+<path d="M27 111 C37 54 79 20 128 20 C178 20 215 53 230 101 C213 97 202 92 189 87 C169 56 130 46 103 58 C76 68 54 100 27 111 Z" fill="url(#gSun)"/>
+<circle cx="175" cy="92" r="31" fill="#FBF6ED"/>
+<circle cx="175" cy="92" r="24" fill="#EBA13F"/>
+<path d="M26 120 C81 109 133 118 155 143 C177 168 165 205 135 244 C97 222 65 218 27 240 C14 201 17 152 26 120 Z" fill="url(#gRiver)"/>
+<path d="M25 128 C74 112 145 125 139 147 C134 162 104 166 90 185 C79 200 84 221 104 234 C67 214 60 190 79 174 C90 162 121 154 113 147 C105 138 61 137 25 148 Z" fill="#FBF6ED"/>
+<path d="M27 169 C50 162 81 163 100 171 C78 183 62 206 44 235 C28 213 25 190 27 169 Z" fill="#07332F" opacity=".48"/>
+<path d="M167 193 C163 146 184 119 231 111 C231 158 206 185 167 193 Z" fill="#71816A"/>
+<path d="M166 242 C162 198 192 176 239 169 C234 217 208 238 166 242 Z" fill="#BD694E"/>
+</g></svg>
