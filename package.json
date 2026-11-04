@@ -1,0 +1,28 @@
+{
+  "name": "suzi",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SUZI: human-centered, open-source AI infrastructure. First task: resource.extract.v1 (evidence-quoted resource extraction).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "example": "tsx examples/resource-extract/run.ts --adapter mock",
+    "extract": "tsx examples/resource-extract/run.ts",
+    "hash-evidence": "tsx scripts/hash-evidence.ts"
+  },
+  "devDependencies": {
+    "@types/node": "20.19.43",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  },
+  "dependencies": {
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1"
+  }
+}
