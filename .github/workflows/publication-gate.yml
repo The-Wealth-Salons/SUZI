@@ -1,0 +1,19 @@
+name: Public disclosure preflight
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  public-preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Detect obviously restricted paths and markers
+        run: python3 scripts/publication_preflight.py --root . --tracked
+      - name: Warn about scope
+        run: |
+          echo 'Automated scan is limited. Human disclosure approval and pre-first-push review are separately required.'
