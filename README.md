@@ -12,4 +12,4 @@ SUZI is an emerging human-centered open-source AI initiative by **The Wealth Sal
 
 Public contributions are welcome through asynchronous GitHub collaboration when contribution guidance is added. Internal implementation context, user data, family photographs, credentials, and partner-owned source material are not part of this public repository.
 
-**Licensing:** Planned code license Apache-2.0, subject to addition of the actual license and upstream attribution review. Branding and trademarks are not licensed for independent reuse by publication of these assets. Name clearance remains pending.
+**Licensing:** Code is licensed under Apache-2.0 (see LICENSE), subject to upstream attribution review. Branding and trademarks are not licensed for independent reuse by publication of these assets. Name clearance remains pending.

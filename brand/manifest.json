@@ -18,23 +18,23 @@
   },
   "lastReviewed": "2026-10-30",
   "files": {
-    ".github/PULL_REQUEST_TEMPLATE.md": "38df817a2ac3566160b8128982ca8d45c45eb85156e0d76c5077b86f9a884e4d",
-    ".github/workflows/publication-gate.yml": "9d1d1f42abd27978e1aa2d130f922b913880f739bda53afe899efa28c662d739",
-    "README.md": "40b38af1f775e5ce8002e06b8c9c48a9874d0a46a69167df6ff2151ca355a33a",
-    "brand/README.md": "bc5b9ce417fab1ec95317319c0b99f779aa3a99f6854c2de8890644019980e79",
+    ".github/PULL_REQUEST_TEMPLATE.md": "d60c77829ad8e61cc95ff944f4391cb20f814d232bc9876aa1573e869eb8ba66",
+    ".github/workflows/publication-gate.yml": "a0428a9d7620727af4d62353b1421a429c0bac438837366f03543231b8b947f9",
+    "README.md": "b8f9d1df2d4fc1669267b272037079b27324a4219393881cdda4d6fbdc578d81",
+    "brand/README.md": "2a78d3a2bafe399f8896a0ffbc9c04ca5aad97ad5848d9725ca761437be388cb",
     "brand/logo/suzi-horizontal-primary.svg": "f63a16dc2fbde44f88898d6e8cffc943408439f5e648c6564bf11f8ca7804f76",
     "brand/logo/suzi-stacked-primary.svg": "08ee104404c8b577c032345b2ca027cf07e833423ee5023830c6aa53c5c0b5ab",
     "brand/logo/suzi-symbol-color.svg": "931170fbdbe64d8deef401ceb3e6e067e098e0c8467522741e539618e858e9d1",
     "brand/logo/suzi-wordmark-forest.svg": "e420753079a6ba8e6783a1a9040f60f3982cd0e48e8bab67580f59017a2002d0",
     "brand/logo/suzi-wordmark-ivory.svg": "7f881af1fe9bade035265b0ce20aa2ae8dd7127603932efd06c15b312481eaf8",
-    "brand/tokens/suzi-tokens.css": "dfb8bb610bdce61f3ef30cee1f95384814992a90f1ae020988663b0c025c085b",
-    "brand/tokens/suzi-tokens.json": "5dd1ddf543415003e4a9a1ed25943d021ba60c4ceddbf29f80809a37044a0b1f",
-    "docs/PUBLICATION_REVIEW.md": "ef6c3e8869bb9bdc48f21d144c2d2cdfe2d70cebb22874908893a5f32b7e930a",
-    "scripts/publication_preflight.py": "d5751dac3cce6d8052bb094bfc1ce6451aad73dff336112023666f17045425dd",
+    "brand/tokens/suzi-tokens.css": "f6f732bf5c15ed059c46644b5a5daadf0a07b369e0c55a817e44cadce21eb4d7",
+    "brand/tokens/suzi-tokens.json": "65c149f511e135cfa31ba0d2d4f2191264712b1b0dda8f37e96d475fff34b769",
+    "docs/PUBLICATION_REVIEW.md": "eeedf28a0c71aff3c27bdde0f9d280c7afd7607221f7516a15d37a94d64835be",
+    "scripts/publication_preflight.py": "db51e568c04c8b12714244ccb2743ff25927981e7f25007f7414b6d19e9ccae9",
     "site/assets/suzi-landscape-waves.svg": "62e2e7748824f25e91814478385d5e021bdb8e7f14490f8ac160c339ac4ba766",
     "site/assets/suzi-symbol-color.svg": "931170fbdbe64d8deef401ceb3e6e067e098e0c8467522741e539618e858e9d1",
     "site/index.html": "8fe0bd7c54aa9e7aa101d096ad734cd5fda408e51fd246675b5ab64c1228ad84",
-    "site/styles.css": "ca86744175be66dd7bb3677fccd4e3a0679647ac77fa21ad11375d9ce09fd467",
-    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    "site/styles.css": "7ce19b94afbab09455d0c453d41f429351bef76b66e18ff0c7500dc9d951af52",
+    "LICENSE": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
   }
 }
