@@ -19,7 +19,7 @@
   "lastReviewed": "2026-10-30",
   "files": {
     ".github/PULL_REQUEST_TEMPLATE.md": "d60c77829ad8e61cc95ff944f4391cb20f814d232bc9876aa1573e869eb8ba66",
-    ".github/workflows/publication-gate.yml": "a0428a9d7620727af4d62353b1421a429c0bac438837366f03543231b8b947f9",
+    ".github/workflows/publication-gate.yml": "2aeb239e877834434de82be985866158882a462e8510596c6c77ac276a58421a",
     "README.md": "b8f9d1df2d4fc1669267b272037079b27324a4219393881cdda4d6fbdc578d81",
     "brand/README.md": "2a78d3a2bafe399f8896a0ffbc9c04ca5aad97ad5848d9725ca761437be388cb",
     "brand/logo/suzi-horizontal-primary.svg": "f63a16dc2fbde44f88898d6e8cffc943408439f5e648c6564bf11f8ca7804f76",
