@@ -1,0 +1,31 @@
+{
+  "contract_version": "1.0",
+  "outcome": "extracted",
+  "abstention_reason": null,
+  "claims": [
+    {
+      "claim_id": "c1",
+      "field": "name",
+      "value": "Example Career Center",
+      "assertion_kind": "source_statement",
+      "evidence": [{ "evidence_id": "ev-0001", "block_id": "b1", "quote": "Example Career Center" }]
+    },
+    {
+      "claim_id": "c2",
+      "field": "cost",
+      "value": "Initial consultations are free.",
+      "assertion_kind": "source_statement",
+      "evidence": [{ "evidence_id": "ev-0001", "block_id": "b1", "quote": "Initial consultations are free." }]
+    },
+    {
+      "claim_id": "c3",
+      "field": "cost",
+      "value": "Follow-up appointments cost $50.",
+      "assertion_kind": "source_statement",
+      "evidence": [{ "evidence_id": "ev-0001", "block_id": "b1", "quote": "Follow-up appointments cost $50." }]
+    }
+  ],
+  "unknown_fields": [{ "field": "hours", "reason": "not_stated" }],
+  "conflicts": [],
+  "review_flags": []
+}
