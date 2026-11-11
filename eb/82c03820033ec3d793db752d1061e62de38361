@@ -1,0 +1,19 @@
+src/tasks/resource-extract/digest.ts
+  s_f828f306476c18::t_fde9de3cf3a237 39-46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "eb82c03820033ec3d793db752d1061e62de38361",
+  "prompts": {},
+  "sessions": {
+    "s_f828f306476c18": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c8ef-10fc-78e0-ad76-ce99b0212055",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "b-pm <b@thewealthsalons.com>"
+    }
+  }
+}
