@@ -6,7 +6,7 @@ import {
   outputSchema,
   resultSchema,
 } from "../../src/tasks/resource-extract/schemas.js";
-import { computeEvidenceContentSha256, sha256Hex } from "../../src/tasks/resource-extract/digest.js";
+import { canonicalJson, computeEvidenceContentSha256, sha256Hex } from "../../src/tasks/resource-extract/digest.js";
 import { resolveQuote } from "../../src/tasks/resource-extract/spans.js";
 import { loadPromptPackage, renderRequest } from "../../src/tasks/resource-extract/prompt.js";
 import { RESOURCE_FIELDS, validateInput } from "../../src/tasks/resource-extract/index.js";
@@ -53,6 +53,31 @@ describe("evidence digest", () => {
     const b = computeEvidenceContentSha256([{ block_id: "b2", text: "y" }, { block_id: "b1", text: "x" }]);
     const c = computeEvidenceContentSha256([{ block_id: "b1", text: "x " }, { block_id: "b2", text: "y" }]);
     expect(new Set([a, b, c]).size).toBe(3);
+  });
+});
+
+describe("canonical JSON digest", () => {
+  it("preserves own __proto__ keys so distinct JSON values have distinct digests", () => {
+    const input: unknown = JSON.parse('{"a":1,"__proto__":{"marker":"synthetic"}}');
+    const canonical = canonicalJson(input);
+    expect(canonical).toBe('{"__proto__":{"marker":"synthetic"},"a":1}');
+    expect(sha256Hex(canonical)).not.toBe(sha256Hex(canonicalJson({ a: 1 })));
+    expect(JSON.stringify(input)).toBe('{"a":1,"__proto__":{"marker":"synthetic"}}');
+  });
+
+  it("preserves nested special keys and array order while sorting object keys", () => {
+    const input: unknown = JSON.parse(
+      '{"z":[{"b":2,"__proto__":null,"a":1},{"__proto__":"literal"}],"a":{"constructor":"own","__proto__":{"z":2,"a":1}}}',
+    );
+    expect(canonicalJson(input)).toBe(
+      '{"a":{"__proto__":{"a":1,"z":2},"constructor":"own"},"z":[{"__proto__":null,"a":1,"b":2},{"__proto__":"literal"}]}',
+    );
+  });
+
+  it("keeps ordinary sorted serialization stable", () => {
+    expect(canonicalJson({ z: [{ b: 2, a: 1 }, null, true], a: "Café 🎉" })).toBe(
+      '{"a":"Café 🎉","z":[{"a":1,"b":2},null,true]}',
+    );
   });
 });
 

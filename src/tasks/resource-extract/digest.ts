@@ -34,7 +34,8 @@ function sortKeys(value: unknown): unknown {
     const entries = Object.entries(value as Record<string, unknown>).sort(
       ([a], [b]) => (a < b ? -1 : a > b ? 1 : 0),
     );
-    const out: Record<string, unknown> = {};
+    // Preserve every JSON key, including __proto__, as an own data property.
+    const out: Record<string, unknown> = Object.create(null);
     for (const [k, v] of entries) out[k] = sortKeys(v);
     return out;
   }
