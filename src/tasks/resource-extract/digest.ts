@@ -36,7 +36,14 @@ function sortKeys(value: unknown): unknown {
     );
     // Preserve every JSON key, including __proto__, as an own data property.
     const out: Record<string, unknown> = Object.create(null);
-    for (const [k, v] of entries) out[k] = sortKeys(v);
+    for (const [k, v] of entries) {
+      Object.defineProperty(out, k, {
+        value: sortKeys(v),
+        enumerable: true,
+        configurable: true,
+        writable: true,
+      });
+    }
     return out;
   }
   return value;
