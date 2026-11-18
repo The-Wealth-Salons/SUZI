@@ -1,0 +1,11 @@
+# Code owners for The-Wealth-Salons/SUZI.
+#
+# GitHub reads this file from `.github/CODEOWNERS`. Protected-path ownership
+# mirrors the org pattern (controlplane, our-bible): authority, security, and
+# agent-governance paths are owned by B. (`@b-pm`); everything else stays
+# machine-reviewed. Last matching pattern wins.
+
+# Agent governance and CI: how agents review and merge is governance, not docs.
+/.github/workflows/ @b-pm
+/.github/CODEOWNERS @b-pm
+/.mergify.yml @b-pm
