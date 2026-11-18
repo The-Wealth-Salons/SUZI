@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        # Pin matches actions/checkout v4.4.0 (the commit currently tagged v4).
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Smoke check
+        # This tree has no package manager, lockfile, tests, typecheck, lint, or build.
+        run: |
+          set -eu
+          test -s README.md
+          test -s LICENSE
+          test -d docs
+          find docs -type f -name '*.md' | grep -q .
+          echo "Smoke check passed: README, LICENSE, and docs markdown are present."

@@ -1,0 +1,53 @@
+# Mergify Merge Protections for The-Wealth-Salons/SUZI.
+# Rollout authorized by B. Pagels-Minor on 2026-11-18: org-wide rollout of the
+# Phase A pilot Merge Protections template to every repository that had no
+# Mergify configuration. Rollout plan:
+# https://github.com/The-Wealth-Salons/controlplane/issues/1630
+# Review contract: https://github.com/The-Wealth-Salons/controlplane/blob/main/docs/qa/MERGIFY_REVIEW_CONTRACT.md
+#
+# NO CONFIGURED MERGE AUTHORITY: no auto_merge_conditions, pull_request_rules,
+# queue_rules, merge action, or queue action, and no merge_queue block -
+# Mergify's Merge Queue is not enabled for this repository, and the pilot
+# template's queue configuration was removed org-wide by owner decision on
+# 2026-11-18. Existing GitHub rulesets, CODEOWNERS, exact-head independent
+# reviews, security merge guards and deterministic CI remain separate
+# requirements. These are process protections only, NOT evidence that tests
+# ran or code is safe to release.
+#
+# The Mergify check is reported for visibility; this file does not make it a
+# required check in GitHub branch protection or rulesets. Making it required
+# is a separately governed ruleset change.
+#
+# CI CHECK: this repository's verified executing deterministic check is
+# `@github-actions/ci`, observed reporting on sampled pull request
+# heads on 2026-11-18 (rollout census, controlplane #1630). It is asserted
+# as a protection below. Checks that only render previews, record sessions,
+# or scan without gating were deliberately not chosen.
+merge_protections_settings:
+  reporting_method: check-runs
+  post_comment: true
+
+merge_protections:
+  - name: Review threads disposed
+    description: >-
+      All GitHub review threads must be resolved; this establishes disposition
+      completion only, not review validity or current-head approval.
+    if:
+      - base = main
+      - -draft
+    success_conditions:
+      - "#review-threads-unresolved = 0"
+
+  - name: No merge conflict
+    if:
+      - base = main
+      - -draft
+    success_conditions:
+      - -conflict
+
+  - name: CI executed and green on this head
+    if:
+      - base = main
+      - -draft
+    success_conditions:
+      - check-success = @github-actions/ci
