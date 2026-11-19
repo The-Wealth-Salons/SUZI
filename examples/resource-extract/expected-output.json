@@ -1,0 +1,100 @@
+{
+  "status": "ok",
+  "data": {
+    "contract_version": "1.0",
+    "task": "resource.extract.v1",
+    "request_id": "example-req-0001",
+    "outcome": "extracted",
+    "abstention_reason": null,
+    "claims": [
+      {
+        "claim_id": "c1",
+        "field": "name",
+        "value": "Example Career Center",
+        "assertion_kind": "source_statement",
+        "evidence": [
+          {
+            "evidence_id": "ev-0001",
+            "block_id": "b1",
+            "quote": "Example Career Center",
+            "span": {
+              "start": 0,
+              "end": 21,
+              "unit": "utf16_code_unit"
+            }
+          }
+        ]
+      },
+      {
+        "claim_id": "c2",
+        "field": "cost",
+        "value": "Initial consultations are free.",
+        "assertion_kind": "source_statement",
+        "evidence": [
+          {
+            "evidence_id": "ev-0001",
+            "block_id": "b1",
+            "quote": "Initial consultations are free.",
+            "span": {
+              "start": 23,
+              "end": 54,
+              "unit": "utf16_code_unit"
+            }
+          }
+        ]
+      },
+      {
+        "claim_id": "c3",
+        "field": "cost",
+        "value": "Follow-up appointments cost $50.",
+        "assertion_kind": "source_statement",
+        "evidence": [
+          {
+            "evidence_id": "ev-0001",
+            "block_id": "b1",
+            "quote": "Follow-up appointments cost $50.",
+            "span": {
+              "start": 55,
+              "end": 87,
+              "unit": "utf16_code_unit"
+            }
+          }
+        ]
+      }
+    ],
+    "unknown_fields": [
+      {
+        "field": "hours",
+        "reason": "not_stated"
+      }
+    ],
+    "conflicts": [],
+    "review_flags": [],
+    "receipt": {
+      "prompt_package": "resource.extract.v1@1.0.0",
+      "prompt_digest": "0805297f7f3128493f58eb8354ce4c822320c8f29104d2209ec5fab67b2e7c31",
+      "input_schema_digest": "a09320d640c103ef7b589b6caae033c35a7100222ac7407ccd2d91a4d59102da",
+      "output_schema_digest": "46b71e53f31592cb299910e634896d13807de7aed435e23647291cfbc55351d1",
+      "input_digest": "f8c32dd675acc1744ce9173995944943c0560be0bec52d7f3548fe078b8d02e3",
+      "adapter": {
+        "adapter_id": "mock-canned@1",
+        "model_ref": "MOCK canned response (no model, no inference)",
+        "mock": true
+      },
+      "finish_reason": "stop",
+      "attempts": 1,
+      "usage": {
+        "input_tokens": "unknown",
+        "output_tokens": "unknown"
+      },
+      "validation": {
+        "input_schema": "passed",
+        "output_schema": "passed",
+        "evidence_references": "passed",
+        "evidence_quotes": "passed",
+        "field_coverage": "passed",
+        "claim_integrity": "passed"
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "task": "resource.extract.v1",
+  "version": "1.0.0",
+  "system_prompt_file": "system.md",
+  "prompt_sha256": "0805297f7f3128493f58eb8354ce4c822320c8f29104d2209ec5fab67b2e7c31",
+  "output_schema": "contracts/tasks/resource.extract.v1/output.schema.json",
+  "renderer": "resource.extract.v1/render@1",
+  "generation": {
+    "temperature": 0,
+    "max_output_tokens": 2048
+  },
+  "examples": "none (synthetic examples to be added with held-out evaluations)",
+  "status": "draft"
+}
