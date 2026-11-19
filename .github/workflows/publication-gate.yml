@@ -1,0 +1,21 @@
+name: Public disclosure preflight
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  public-preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        # Pin matches actions/checkout v4.4.0 (the commit currently tagged v4).
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Detect obviously restricted paths and markers
+        run: python3 scripts/publication_preflight.py --root . --tracked
+      - name: Warn about scope
+        run: |
+          echo 'Automated scan is limited. Human disclosure approval and pre-first-push review are separately required.'

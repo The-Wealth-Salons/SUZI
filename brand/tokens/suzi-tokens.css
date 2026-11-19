@@ -1,0 +1,20 @@
+:root {
+  --suzi-forest: #0B3B38;
+  --suzi-deep: #07332F;
+  --suzi-river: #2D6F71;
+  --suzi-sage: #71816A;
+  --suzi-gold: #EBA13F;
+  --suzi-terracotta: #BD694E;
+  --suzi-coral: #E5A28B;
+  --suzi-cream: #FBF6ED;
+  --suzi-white: #FFFFFF;
+  --suzi-light: #F4EBDE;
+  --suzi-ink: #1E3432;
+  --suzi-quiet: #566B66;
+  --suzi-font-display: "EB Garamond", Georgia, "Times New Roman", serif;
+  --suzi-font-ui: Inter, system-ui, -apple-system, sans-serif;
+  --suzi-font-code: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --suzi-radius-sm: 10px;
+  --suzi-radius-lg: 22px;
+  --suzi-focus: 3px solid #0B3B38;
+}
