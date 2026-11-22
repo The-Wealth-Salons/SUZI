@@ -72,6 +72,52 @@ describe("OpenAI-compatible small-model adapter (no network: fetch is injected)"
     }
   });
 
+  it("rejects an oversized streamed response with no Content-Length, in one call, leaking nothing", async () => {
+    const filler = "A".repeat(512);
+    let calls = 0;
+    const impl = (async () => {
+      calls += 1;
+      const stream = new ReadableStream<Uint8Array>({
+        pull(controller) {
+          controller.enqueue(new TextEncoder().encode(filler));
+        },
+      });
+      // No content-length header: the limit must be enforced on streamed bytes.
+      return new Response(stream, { status: 200, headers: { "content-type": "application/json" } });
+    }) as unknown as typeof fetch;
+    const adapter = createOpenAICompatibleAdapter({
+      baseUrl: "http://x/v1",
+      model: "m",
+      fetchImpl: impl,
+      maxResponseBytes: 1024,
+    });
+    const result = await createResourceExtractionService({ adapter }).execute(careerInput());
+    expect(result).toEqual({ status: "failed", error: { code: "MODEL_UNAVAILABLE" } });
+    expect(calls).toBe(1);
+    expect(JSON.stringify(result)).not.toContain("AAAA");
+  });
+
+  it("rejects a response whose declared Content-Length exceeds the limit", async () => {
+    const impl = (async () =>
+      new Response("{}", {
+        status: 200,
+        headers: { "content-type": "application/json", "content-length": "2049" },
+      })) as unknown as typeof fetch;
+    const adapter = createOpenAICompatibleAdapter({
+      baseUrl: "http://x/v1",
+      model: "m",
+      fetchImpl: impl,
+      maxResponseBytes: 1024,
+    });
+    await expect(
+      adapter.generate({
+        messages: [{ role: "user", content: "x" }],
+        response_format: { name: "out", schema: {} },
+        generation: { temperature: 0, max_output_tokens: 16 },
+      }),
+    ).rejects.toThrow("model response too large");
+  });
+
   it("sends an optional bearer token only in a header", async () => {
     const { impl, calls } = fakeFetch(completion(JSON.stringify(careerOutput())));
     const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://x/v1", model: "m", apiKey: "local-test-token", fetchImpl: impl });

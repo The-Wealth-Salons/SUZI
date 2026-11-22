@@ -32,6 +32,14 @@ import type {
  */
 export const MAX_TOTAL_EVIDENCE_UTF16 = 48_000;
 
+/**
+ * Hard bound on adapter output text, in UTF-16 code units, enforced before
+ * JSON parsing. An adapter (or a compromised model endpoint behind it) that
+ * returns more than this yields one bounded MODEL_UNAVAILABLE failure; the
+ * oversized text is never parsed, retained or surfaced.
+ */
+export const MAX_MODEL_OUTPUT_LENGTH = 1_048_576;
+
 export interface ResourceExtractionService {
   execute(input: unknown): Promise<ResourceExtractionResult>;
 }
@@ -89,6 +97,9 @@ async function run(
     return fail("MODEL_UNAVAILABLE");
   }
   if (!isAdapterResponse(response)) return fail("MODEL_UNAVAILABLE");
+  if (response.outputText.length > MAX_MODEL_OUTPUT_LENGTH) {
+    return fail("MODEL_UNAVAILABLE");
+  }
 
   // 3. Finish reason is checked before parsing.
   if (response.finishReason === "length") return fail("MODEL_OUTPUT_TRUNCATED");
@@ -123,11 +134,13 @@ async function run(
   checkFieldCoverage(input.requested_fields, output);
   checkClaimIntegrity(output);
 
-  if (output.outcome === "abstained") {
-    if (output.abstention_reason === null) return fail("OUTPUT_SCHEMA_INVALID");
-    return { status: "abstained", reason: output.abstention_reason };
+  if (output.outcome === "abstained" && output.abstention_reason === null) {
+    return fail("OUTPUT_SCHEMA_INVALID");
   }
 
+  // Both outcomes build and validate the full trusted envelope: request
+  // correlation, resolved review flags, unknown fields and the execution
+  // receipt survive an abstention exactly as they survive an extraction.
   const data: ResourceExtractionResultData = {
     contract_version: "1.0",
     task: "resource.extract.v1",
@@ -163,6 +176,10 @@ async function run(
   };
   // The envelope itself must satisfy the published result contract.
   if (!validateResultData(data)) return fail("OUTPUT_SCHEMA_INVALID");
+  if (data.outcome === "abstained") {
+    // abstention_reason is non-null here: checked before the envelope is built.
+    return { status: "abstained", reason: data.abstention_reason as NonNullable<typeof data.abstention_reason>, data };
+  }
   return { status: "ok", data };
 }
 

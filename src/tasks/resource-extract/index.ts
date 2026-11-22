@@ -1,4 +1,8 @@
-export { createResourceExtractionService, MAX_TOTAL_EVIDENCE_UTF16 } from "./service.js";
+export {
+  createResourceExtractionService,
+  MAX_TOTAL_EVIDENCE_UTF16,
+  MAX_MODEL_OUTPUT_LENGTH,
+} from "./service.js";
 export type {
   CreateResourceExtractionServiceOptions,
   ResourceExtractionService,
@@ -9,6 +13,7 @@ export {
   openAICompatibleConfigFromEnv,
   ModelConfigurationError,
   MODEL_ENV,
+  MAX_MODEL_RESPONSE_BYTES,
 } from "./adapters/openai-compatible.js";
 export type { OpenAICompatibleAdapterConfig } from "./adapters/openai-compatible.js";
 export { computeEvidenceContentSha256 } from "./digest.js";

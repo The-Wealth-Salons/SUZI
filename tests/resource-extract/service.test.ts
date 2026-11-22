@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createMockAdapter,
   createResourceExtractionService,
+  MAX_MODEL_OUTPUT_LENGTH,
   MAX_TOTAL_EVIDENCE_UTF16,
 } from "../../src/tasks/resource-extract/index.js";
 import type {
@@ -131,18 +132,65 @@ describe("resource.extract.v1 service: success", () => {
     expect(s2 && text.slice(s2.start, s2.end)).toBe("every Saturday.");
   });
 
-  it("returns a valid abstention without claims", async () => {
+  it("returns a valid abstention without claims, with the full validated envelope", async () => {
     const output: ResourceExtractionOutput = {
       contract_version: "1.0",
       outcome: "abstained",
       abstention_reason: "multiple_resources",
       claims: [],
-      unknown_fields: [],
+      unknown_fields: [{ field: "hours", reason: "not_stated" }],
       conflicts: [],
       review_flags: [{ code: "possible_multiple_resources", evidence: [ref("Example Career Center")] }],
     };
     const { result } = await run(careerInput(), output);
-    expect(result).toEqual({ status: "abstained", reason: "multiple_resources" });
+    expect(result.status).toBe("abstained");
+    if (result.status !== "abstained") return;
+    expect(result.reason).toBe("multiple_resources");
+    // Request correlation, resolved review flags, unknown fields and the
+    // execution receipt all survive the abstention.
+    expect(result.data.outcome).toBe("abstained");
+    expect(result.data.abstention_reason).toBe("multiple_resources");
+    expect(result.data.request_id).toBe("req-test-1");
+    expect(result.data.unknown_fields).toEqual([{ field: "hours", reason: "not_stated" }]);
+    expect(result.data.review_flags).toEqual([
+      {
+        code: "possible_multiple_resources",
+        evidence: [
+          {
+            evidence_id: "ev1",
+            block_id: "b1",
+            quote: "Example Career Center",
+            span: { start: 0, end: 21, unit: "utf16_code_unit" },
+          },
+        ],
+      },
+    ]);
+    expect(result.data.receipt.adapter.mock).toBe(true);
+    expect(result.data.receipt.input_digest).toMatch(/^[0-9a-f]{64}$/);
+    expect(result.data.receipt.usage).toEqual({ input_tokens: "unknown", output_tokens: "unknown" });
+  });
+
+  it("resolves a quote after 8,000 UTF-16 units in an astral-heavy block", async () => {
+    // 4,000 emoji = 4,000 code points but 8,000 UTF-16 units; "Free" then
+    // resolves to [8000, 8004), which the result contract must accept.
+    const text = `${"😀".repeat(4000)}Free`;
+    expect([...text].length).toBe(4004);
+    expect(text.length).toBe(8004);
+    const input = careerInput({
+      requested_fields: ["cost"],
+      evidence: [source("ev1", [{ block_id: "b1", text }])],
+    });
+    const output = careerOutput({
+      claims: [claim("c1", "cost", "Free")],
+      unknown_fields: [],
+    });
+    const { result } = await run(input, output);
+    if (result.status !== "ok") throw new Error(`expected ok, got ${JSON.stringify(result)}`);
+    expect(result.data.claims[0]?.evidence[0]?.span).toEqual({
+      start: 8000,
+      end: 8004,
+      unit: "utf16_code_unit",
+    });
   });
 
   it("accepts an instruction-like source when the model only flags it", async () => {
@@ -277,6 +325,14 @@ describe("resource.extract.v1 service: model output failures", () => {
     };
     const result = await createResourceExtractionService({ adapter }).execute(careerInput());
     expect(code(result)).toBe("MODEL_UNAVAILABLE");
+  });
+
+  it("bounds adapter output text before parsing, with one call and no leaked content", async () => {
+    const adapter = mockFor("x".repeat(MAX_MODEL_OUTPUT_LENGTH + 1));
+    const result = await createResourceExtractionService({ adapter }).execute(careerInput());
+    expect(result).toEqual({ status: "failed", error: { code: "MODEL_UNAVAILABLE" } });
+    expect(adapter.calls).toBe(1);
+    expect(JSON.stringify(result).length).toBeLessThan(200);
   });
 
   it("makes exactly one adapter call (no retries)", async () => {

@@ -263,7 +263,7 @@ export type FailureCode = (typeof FAILURE_CODES)[number];
 
 export type ResourceExtractionResult =
   | { status: "ok"; data: ResourceExtractionResultData }
-  | { status: "abstained"; reason: AbstentionReason }
+  | { status: "abstained"; reason: AbstentionReason; data: ResourceExtractionResultData }
   | { status: "failed"; error: { code: FailureCode } };
 
 export type FinishReason = "stop" | "length" | "refusal";

@@ -19,8 +19,55 @@ export interface OpenAICompatibleAdapterConfig {
   /** Optional bearer token for servers that require one. Never logged. */
   apiKey?: string;
   timeoutMs?: number;
+  /** Hard cap on the response body size in bytes. Defaults to MAX_MODEL_RESPONSE_BYTES. */
+  maxResponseBytes?: number;
   /** Injected for tests; defaults to global fetch. */
   fetchImpl?: typeof fetch;
+}
+
+/**
+ * Hard byte limit on a model-server response body. `max_tokens` is only a
+ * request parameter: an erroneous or compromised OpenAI-compatible server
+ * can ignore it, so the body is read as a stream and rejected the moment it
+ * exceeds this limit — including responses with no Content-Length.
+ */
+export const MAX_MODEL_RESPONSE_BYTES = 1_048_576;
+
+async function readBodyWithLimit(res: Response, limit: number): Promise<string> {
+  const declared = Number(res.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > limit) {
+    throw new Error("model response too large");
+  }
+  const body = res.body;
+  if (body === null || typeof body.getReader !== "function") {
+    const text = await res.text();
+    if (new TextEncoder().encode(text).byteLength > limit) {
+      throw new Error("model response too large");
+    }
+    return text;
+  }
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value !== undefined) {
+      total += value.byteLength;
+      if (total > limit) {
+        await reader.cancel().catch(() => undefined);
+        throw new Error("model response too large");
+      }
+      chunks.push(value);
+    }
+  }
+  const merged = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(merged);
 }
 
 export class ModelConfigurationError extends Error {}
@@ -118,7 +165,14 @@ export function createOpenAICompatibleAdapter(
           }),
         });
         if (!res.ok) throw new Error(`model server returned HTTP ${res.status}`);
-        return parseChatCompletion(await res.json());
+        const text = await readBodyWithLimit(res, config.maxResponseBytes ?? MAX_MODEL_RESPONSE_BYTES);
+        let body: unknown;
+        try {
+          body = JSON.parse(text);
+        } catch {
+          throw new Error("bad response");
+        }
+        return parseChatCompletion(body);
       } finally {
         clearTimeout(timer);
       }

@@ -362,12 +362,12 @@
             "start": {
               "type": "integer",
               "minimum": 0,
-              "maximum": 8000
+              "maximum": 16000
             },
             "end": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 8000
+              "maximum": 16000
             },
             "unit": {
               "const": "utf16_code_unit"

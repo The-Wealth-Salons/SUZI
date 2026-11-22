@@ -33,7 +33,7 @@ interface ExtractionAdapter {
   generate(request: unknown): Promise<{ outputText: string; finishReason: "stop" | "length" | "refusal"; usage?: ... }>;
 }
 const service = createResourceExtractionService({ adapter });
-const result = await service.execute(input); // {status:"ok",data} | {status:"abstained",reason} | {status:"failed",error:{code}}
+const result = await service.execute(input); // {status:"ok",data} | {status:"abstained",reason,data} | {status:"failed",error:{code}}
 ```
 
 There are two adapters:
