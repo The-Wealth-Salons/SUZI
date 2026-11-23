@@ -395,6 +395,44 @@ describe("resource.extract.v1 service: existing-resource target label (owner rul
     expect(adapter.calls).toBe(0);
   });
 
+  it("does not match a label that is a strict prefix of a longer token (East Clinic vs East Clinics)", async () => {
+    const input = careerInput({
+      target: { mode: "existing_resource", resource_id: "r8", name_hint: "East Clinic" },
+      requested_fields: ["hours"],
+      evidence: [source("ev1", [{ block_id: "b1", text: "East Clinics is open on Tuesdays." }])],
+    });
+    const { result, adapter } = await run(input);
+    expect(result).toEqual({ status: "failed", error: { code: "INVALID_INPUT" } });
+    expect(adapter.calls).toBe(0);
+  });
+
+  it("matches a label in an unspaced script directly against ordinary prose", async () => {
+    // Goose P2 on 0b158f6d: Chinese (and other unspaced scripts) write
+    // names directly against neighbouring prose with no space boundary;
+    // requiring one rejected valid evidence. A label written entirely
+    // in such a script matches by substring presence.
+    const abstainAll: ResourceExtractionOutput = {
+      contract_version: "1.0",
+      outcome: "abstained",
+      abstention_reason: "insufficient_evidence",
+      claims: [],
+      unknown_fields: [
+        { field: "name", reason: "not_stated" },
+        { field: "cost", reason: "not_stated" },
+        { field: "hours", reason: "not_stated" },
+      ],
+      conflicts: [],
+      review_flags: [],
+    };
+    const input = careerInput({
+      target: { mode: "existing_resource", resource_id: "r7", name_hint: "東區診所" },
+      evidence: [source("ev1", [{ block_id: "b1", text: "東區診所每週二營業。" }])],
+    });
+    const { result, adapter } = await run(input, abstainAll);
+    expect(result.status).toBe("abstained");
+    expect(adapter.calls).toBe(1);
+  });
+
   it("matches the label through case and punctuation differences", async () => {
     const abstainAll: ResourceExtractionOutput = {
       contract_version: "1.0",
