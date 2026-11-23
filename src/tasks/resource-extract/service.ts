@@ -239,20 +239,22 @@ function normalizeForMatch(text: string): string {
  * existing-resource request must carry an evidence-matchable target
  * label. The amended input schema requires `name_hint` for
  * `existing_resource`; this cross-check is the matchability half — the
- * normalized label must appear in at least one evidence block. A label
- * that matches nothing is rejected fail-closed (INVALID_INPUT) before
- * inference, because without it the model cannot tell the caller's
- * target from any other resource the evidence describes.
+ * normalized label must appear in at least one evidence block as a
+ * complete token phrase (space-padded on both sides, so "East Clinic"
+ * does not match inside "Northeast Clinic"). A label that matches
+ * nothing is rejected fail-closed (INVALID_INPUT) before inference,
+ * because without it the model cannot tell the caller's target from
+ * any other resource the evidence describes.
  */
 function targetLabelMatchesEvidence(input: ResourceExtractionInput): boolean {
   if (input.target.mode !== "existing_resource") return true;
   const label = input.target.name_hint;
   if (label === undefined) return false;
-  const needle = normalizeForMatch(label);
-  if (needle.length === 0) return false;
+  const needle = ` ${normalizeForMatch(label)} `;
+  if (needle.trim().length === 0) return false;
   for (const source of input.evidence) {
     for (const block of source.blocks) {
-      if (normalizeForMatch(block.text).includes(needle)) return true;
+      if (` ${normalizeForMatch(block.text)} `.includes(needle)) return true;
     }
   }
   return false;

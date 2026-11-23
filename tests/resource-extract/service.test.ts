@@ -380,6 +380,21 @@ describe("resource.extract.v1 service: existing-resource target label (owner rul
     expect(adapter.calls).toBe(0);
   });
 
+  it("does not match a label inside a longer name (East Clinic vs Northeast Clinic)", async () => {
+    // Goose P2 on 932b88da: a raw substring match lets "East Clinic"
+    // pass against evidence naming only Northeast Clinic, because the
+    // normalized needle sits inside the longer token. The match must
+    // cover complete tokens.
+    const input = careerInput({
+      target: { mode: "existing_resource", resource_id: "r8", name_hint: "East Clinic" },
+      requested_fields: ["hours"],
+      evidence: [source("ev1", [{ block_id: "b1", text: "Northeast Clinic is open on Tuesdays." }])],
+    });
+    const { result, adapter } = await run(input);
+    expect(result).toEqual({ status: "failed", error: { code: "INVALID_INPUT" } });
+    expect(adapter.calls).toBe(0);
+  });
+
   it("matches the label through case and punctuation differences", async () => {
     const abstainAll: ResourceExtractionOutput = {
       contract_version: "1.0",
