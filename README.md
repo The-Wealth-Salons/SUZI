@@ -47,8 +47,8 @@ There are two adapters:
 
 ## Requirements
 
-Node.js **20.19+ on the 20 line, or 22.12+ on the 22 line** (the range the locked
-test toolchain supports; tested on 20.19.2 with npm 11.21.1; see `.nvmrc`).
+Node.js **20.19+ on the 20 line, 22.12+ on the 22 line, or 24+** (the intersection
+of the locked toolchain's supported ranges; tested on 20.19.2 with npm 11.21.1; see `.nvmrc`).
 
 ## Commands
 
