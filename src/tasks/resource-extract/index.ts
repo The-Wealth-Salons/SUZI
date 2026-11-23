@@ -2,6 +2,7 @@ export {
   createResourceExtractionService,
   MAX_TOTAL_EVIDENCE_UTF16,
   MAX_MODEL_OUTPUT_LENGTH,
+  detectInstructionLikeText,
 } from "./service.js";
 export type {
   CreateResourceExtractionServiceOptions,

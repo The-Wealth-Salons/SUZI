@@ -92,6 +92,12 @@ async function run(
   // the content-digest checks.
   const input = snapshotValidatedInput(rawInput);
   if (!inputCrossChecksPass(input)) return fail("INVALID_INPUT");
+  // Owner-ruled deterministic gates (B., 2026-11-23): the existing-resource
+  // target label must match the evidence, and the evidence must be free of
+  // instruction-like text. Both run before rendering, so the adapter is
+  // never invoked on a request that fails either check.
+  if (!targetLabelMatchesEvidence(input)) return fail("INVALID_INPUT");
+  if (!evidenceFreeOfInstructionLikeText(input)) return fail("INVALID_INPUT");
 
   // 2. Inference: exactly one attempt; no retries, no alternative adapter.
   const request = renderRequest(input, pkg);
@@ -211,6 +217,88 @@ function inputCrossChecksPass(input: ResourceExtractionInput): boolean {
     }
   }
   return total <= MAX_TOTAL_EVIDENCE_UTF16;
+}
+
+/**
+ * Text normalization for the target-label match: Unicode compatibility
+ * folding, case folding, and collapsing every run of non-alphanumeric
+ * characters to one space, so punctuation and whitespace differences
+ * between the caller's label and the evidence do not defeat the match.
+ */
+function normalizeForMatch(text: string): string {
+  return text
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Owner ruling (B., 2026-11-23, approved as recommended): an
+ * existing-resource request must carry an evidence-matchable target
+ * label. The amended input schema requires `name_hint` for
+ * `existing_resource`; this cross-check is the matchability half — the
+ * normalized label must appear in at least one evidence block. A label
+ * that matches nothing is rejected fail-closed (INVALID_INPUT) before
+ * inference, because without it the model cannot tell the caller's
+ * target from any other resource the evidence describes.
+ */
+function targetLabelMatchesEvidence(input: ResourceExtractionInput): boolean {
+  if (input.target.mode !== "existing_resource") return true;
+  const label = input.target.name_hint;
+  if (label === undefined) return false;
+  const needle = normalizeForMatch(label);
+  if (needle.length === 0) return false;
+  for (const source of input.evidence) {
+    for (const block of source.blocks) {
+      if (normalizeForMatch(block.text).includes(needle)) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Deterministic patterns for instruction-like text in ingested source
+ * material: override/disregard directives aimed at governing
+ * instructions, prompt-disclosure directives, role reassignment of the
+ * reader, chat-template role markers and tokens, "new instructions"
+ * directives, and fake verification directives aimed at this pipeline.
+ * Deliberately narrow — benign instructional prose ("Follow the
+ * instructions on the application form") matches none of these and
+ * passes; borderline text outside the set remains the model-flag
+ * layer's job (system prompt rule 1).
+ */
+const INSTRUCTION_LIKE_PATTERNS: readonly RegExp[] = [
+  /\b(?:ignore|disregard|forget|override|bypass|do\s+not\s+follow)\b[^.!?\n]{0,40}\b(?:your|the|all|any|previous|prior|above|system|original|these|those)\s+(?:system\s+)?(?:instructions?|prompts?|rules?|directions?|guidelines?)\b/i,
+  /\b(?:reveal|disclose|leak|print|repeat|output|show)\b[^.!?\n]{0,40}\b(?:your|the)\s+(?:system\s+)?(?:prompt|instructions?)\b/i,
+  /\byour\s+(?:system\s+)?(?:prompt|instructions?)\b[^.!?\n]{0,40}\b(?:reveal|disclose|leak|print|repeat|output|show)\b/i,
+  /\byou\s+are\s+now\s+(?:in\s+|a\s+|an\s+|the\s+)?[\w-]*\s*(?:mode|assistant|ai|model|bot|persona)\b/i,
+  /\bact\s+as\s+(?:if\s+you\s+are\s+)?(?:an?\s+)?(?:ai|assistant|model|chatbot|llm)\b/i,
+  /^\s*(?:system|assistant|developer)\s*[:>]/im,
+  /<\|(?:im_start|im_end|system|assistant|user)\|>|\[\/?INST\]|<<\/?SYS>>/i,
+  /\bnew\s+instructions?\s*[:—–-]/i,
+  /\bmark\s+this\b[^.!?\n]{0,40}\b(?:verified|approved|validated|confirmed)\b/i,
+];
+
+/**
+ * Owner ruling (B., 2026-11-23, approved as recommended):
+ * instruction-like-text resistance in ingested sources is a HARD
+ * DETERMINISTIC service-side check, not a model-only duty. Pure pattern
+ * matching over the evidence text — no model call, same input always
+ * gives the same verdict.
+ */
+export function detectInstructionLikeText(text: string): boolean {
+  return INSTRUCTION_LIKE_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+function evidenceFreeOfInstructionLikeText(input: ResourceExtractionInput): boolean {
+  for (const source of input.evidence) {
+    for (const block of source.blocks) {
+      if (detectInstructionLikeText(block.text)) return false;
+    }
+  }
+  return true;
 }
 
 function isAdapterResponse(value: unknown): value is AdapterResponse {

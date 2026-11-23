@@ -115,6 +115,12 @@ export interface EvidenceSource {
 export interface ExtractionTarget {
   mode: "new_candidate" | "existing_resource";
   resource_id?: string;
+  /**
+   * Target label. Optional for `new_candidate`; REQUIRED for
+   * `existing_resource` by the amended input contract (owner ruling,
+   * B., 2026-11-23) and cross-checked service-side against the
+   * evidence — a label that matches no evidence block is rejected.
+   */
   name_hint?: string;
 }
 

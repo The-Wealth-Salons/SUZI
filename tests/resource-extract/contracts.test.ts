@@ -41,6 +41,28 @@ describe("contracts", () => {
   });
 });
 
+describe("target contract (owner amendment, B. 2026-11-23)", () => {
+  it("requires an evidence-matchable target label for existing_resource requests", () => {
+    expect(
+      validateInput(careerInput({ target: { mode: "existing_resource", resource_id: "r1" } })),
+    ).toBe(false);
+    expect(
+      validateInput(
+        careerInput({
+          target: { mode: "existing_resource", resource_id: "r1", name_hint: "Example Career Center" },
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it("keeps the target label optional for new_candidate requests", () => {
+    expect(validateInput(careerInput({ target: { mode: "new_candidate" } }))).toBe(true);
+    expect(
+      validateInput(careerInput({ target: { mode: "new_candidate", name_hint: "Example Career Center" } })),
+    ).toBe(true);
+  });
+});
+
 describe("evidence digest", () => {
   it("matches an independently computed value for the documented serialization", () => {
     const blocks = [{ block_id: "b1", text: "Free 🎉" }];

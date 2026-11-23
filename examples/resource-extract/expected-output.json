@@ -73,7 +73,7 @@
     "receipt": {
       "prompt_package": "resource.extract.v1@1.0.0",
       "prompt_digest": "0805297f7f3128493f58eb8354ce4c822320c8f29104d2209ec5fab67b2e7c31",
-      "input_schema_digest": "a09320d640c103ef7b589b6caae033c35a7100222ac7407ccd2d91a4d59102da",
+      "input_schema_digest": "ed0e8f3e189d21de673fe71757c329c0df891c8082155d724ee7867437be4013",
       "output_schema_digest": "46b71e53f31592cb299910e634896d13807de7aed435e23647291cfbc55351d1",
       "input_digest": "f8c32dd675acc1744ce9173995944943c0560be0bec52d7f3548fe078b8d02e3",
       "adapter": {

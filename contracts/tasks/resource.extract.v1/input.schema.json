@@ -54,11 +54,17 @@
       },
       "then": {
         "required": [
-          "resource_id"
+          "resource_id",
+          "name_hint"
         ],
         "properties": {
           "resource_id": {
             "$ref": "#/$defs/id"
+          },
+          "name_hint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
           }
         },
         "type": "object"
