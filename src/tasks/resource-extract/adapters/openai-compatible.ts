@@ -36,6 +36,9 @@ export const MAX_MODEL_RESPONSE_BYTES = 1_048_576;
 async function readBodyWithLimit(res: Response, limit: number): Promise<string> {
   const declared = Number(res.headers.get("content-length"));
   if (Number.isFinite(declared) && declared > limit) {
+    // Terminate the body before rejecting: it may never end on its own, and
+    // the caller has already given up on this response.
+    await res.body?.cancel().catch(() => undefined);
     throw new Error("model response too large");
   }
   const body = res.body;
@@ -141,6 +144,7 @@ export function createOpenAICompatibleAdapter(
       if (!isRenderedRequest(request)) throw new Error("unsupported request");
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), config.timeoutMs ?? 120_000);
+      let completed = false;
       try {
         const res = await fetchImpl(endpoint, {
           method: "POST",
@@ -164,7 +168,12 @@ export function createOpenAICompatibleAdapter(
             },
           }),
         });
-        if (!res.ok) throw new Error(`model server returned HTTP ${res.status}`);
+        if (!res.ok) {
+          // Release the connection before failing: an error body may be
+          // never-ending, and this adapter will not read it.
+          await res.body?.cancel().catch(() => undefined);
+          throw new Error(`model server returned HTTP ${res.status}`);
+        }
         const text = await readBodyWithLimit(res, config.maxResponseBytes ?? MAX_MODEL_RESPONSE_BYTES);
         let body: unknown;
         try {
@@ -172,9 +181,15 @@ export function createOpenAICompatibleAdapter(
         } catch {
           throw new Error("bad response");
         }
-        return parseChatCompletion(body);
+        const parsed = parseChatCompletion(body);
+        completed = true;
+        return parsed;
       } finally {
         clearTimeout(timer);
+        // On every failure path, terminate the request so an erroneous or
+        // compromised server cannot retain the connection after the failure
+        // has already been reported.
+        if (!completed) controller.abort();
       }
     },
   };

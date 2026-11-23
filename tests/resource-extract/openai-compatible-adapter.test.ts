@@ -118,6 +118,61 @@ describe("OpenAI-compatible small-model adapter (no network: fetch is injected)"
     ).rejects.toThrow("model response too large");
   });
 
+  it("cancels an unfinished body when the declared Content-Length exceeds the limit", async () => {
+    let cancelled = false;
+    const impl = (async () => {
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode("{}"));
+          // The stream is never closed: only cancellation releases it.
+        },
+        cancel() {
+          cancelled = true;
+        },
+      });
+      return new Response(stream, {
+        status: 200,
+        headers: { "content-type": "application/json", "content-length": "2049" },
+      });
+    }) as unknown as typeof fetch;
+    const adapter = createOpenAICompatibleAdapter({
+      baseUrl: "http://x/v1",
+      model: "m",
+      fetchImpl: impl,
+      maxResponseBytes: 1024,
+    });
+    await expect(
+      adapter.generate({
+        messages: [{ role: "user", content: "x" }],
+        response_format: { name: "out", schema: {} },
+        generation: { temperature: 0, max_output_tokens: 16 },
+      }),
+    ).rejects.toThrow("model response too large");
+    expect(cancelled).toBe(true);
+  });
+
+  it("cancels a streaming error body and fails once, without retrying", async () => {
+    let cancelled = false;
+    let calls = 0;
+    const impl = (async () => {
+      calls += 1;
+      const stream = new ReadableStream<Uint8Array>({
+        pull(controller) {
+          controller.enqueue(new TextEncoder().encode("error"));
+        },
+        cancel() {
+          cancelled = true;
+        },
+      });
+      return new Response(stream, { status: 500, headers: { "content-type": "text/plain" } });
+    }) as unknown as typeof fetch;
+    const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://x/v1", model: "m", fetchImpl: impl });
+    const result = await createResourceExtractionService({ adapter }).execute(careerInput());
+    expect(result).toEqual({ status: "failed", error: { code: "MODEL_UNAVAILABLE" } });
+    expect(calls).toBe(1);
+    expect(cancelled).toBe(true);
+  });
+
   it("sends an optional bearer token only in a header", async () => {
     const { impl, calls } = fakeFetch(completion(JSON.stringify(careerOutput())));
     const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://x/v1", model: "m", apiKey: "local-test-token", fetchImpl: impl });

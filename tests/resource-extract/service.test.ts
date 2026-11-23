@@ -13,6 +13,7 @@ import type {
 } from "../../src/tasks/resource-extract/index.js";
 import { careerInput, careerOutput, claim, ref, source } from "./fixtures/builders.js";
 import type { Json } from "./fixtures/builders.js";
+import { canonicalJson, sha256Hex } from "../../src/tasks/resource-extract/digest.js";
 
 function mockFor(output: unknown, finishReason: AdapterResponse["finishReason"] = "stop") {
   return createMockAdapter({
@@ -191,6 +192,39 @@ describe("resource.extract.v1 service: success", () => {
       end: 8004,
       unit: "utf16_code_unit",
     });
+  });
+
+  it("binds the result to the validated input when the caller mutates its object during inference", async () => {
+    const input = careerInput();
+    const expectedDigest = sha256Hex(canonicalJson(input));
+    let resolveGenerate: ((response: AdapterResponse) => void) | undefined;
+    let calls = 0;
+    const adapter: ExtractionAdapter = {
+      descriptor: { adapter_id: "deferred-test@1", model_ref: "test-model", mock: false },
+      generate: () => {
+        calls += 1;
+        return new Promise<AdapterResponse>((resolve) => {
+          resolveGenerate = resolve;
+        });
+      },
+    };
+    const pending = createResourceExtractionService({ adapter }).execute(input);
+    // The caller reuses its (still caller-owned) object while the adapter
+    // call is in flight: new correlation id, zeroed digest, replaced text.
+    const mutable = input as Json;
+    mutable["request_id"] = "req-mutated";
+    const firstSource = (mutable["evidence"] as Json[])[0] as Json;
+    firstSource["content_sha256"] = "0".repeat(64);
+    (firstSource["blocks"] as Json[])[0] = { block_id: "b1", text: "Mutated evidence text." };
+    resolveGenerate?.({ outputText: JSON.stringify(careerOutput()), finishReason: "stop" });
+    const result = await pending;
+    expect(calls).toBe(1);
+    if (result.status !== "ok") throw new Error(`expected ok, got ${JSON.stringify(result)}`);
+    // Everything the service reports still describes the validated original.
+    expect(result.data.request_id).toBe("req-test-1");
+    expect(result.data.receipt.input_digest).toBe(expectedDigest);
+    expect(result.data.receipt.validation.input_schema).toBe("passed");
+    expect(result.data.claims.map((c) => c.value)).toContain("Example Career Center");
   });
 
   it("accepts an instruction-like source when the model only flags it", async () => {

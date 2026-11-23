@@ -85,7 +85,12 @@ async function run(
 ): Promise<ResourceExtractionResult> {
   // 1. Input: schema, then cross-record checks. The adapter is never invoked on invalid input.
   if (!validateInput(rawInput)) return fail("INVALID_INPUT");
-  const input = rawInput;
+  // The caller keeps ownership of the object it passed in and may mutate or
+  // reuse it while the adapter call below is awaited. Execute against an
+  // owned deep snapshot so rendering, evidence resolution, field coverage
+  // and the receipt all describe the one input that passed validation and
+  // the content-digest checks.
+  const input = snapshotValidatedInput(rawInput);
   if (!inputCrossChecksPass(input)) return fail("INVALID_INPUT");
 
   // 2. Inference: exactly one attempt; no retries, no alternative adapter.
@@ -181,6 +186,12 @@ async function run(
     return { status: "abstained", reason: data.abstention_reason as NonNullable<typeof data.abstention_reason>, data };
   }
   return { status: "ok", data };
+}
+
+function snapshotValidatedInput(input: ResourceExtractionInput): ResourceExtractionInput {
+  // The validated input is plain JSON data (it just passed the JSON-schema
+  // check), so a JSON round-trip is a complete, owned deep copy.
+  return JSON.parse(JSON.stringify(input)) as ResourceExtractionInput;
 }
 
 function inputCrossChecksPass(input: ResourceExtractionInput): boolean {
