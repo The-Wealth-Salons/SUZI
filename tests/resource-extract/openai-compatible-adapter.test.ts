@@ -58,7 +58,7 @@ describe("OpenAI-compatible small-model adapter (no network: fetch is injected)"
       [completion("", "stop", { refusal: "I can't do that" }), "MODEL_REFUSAL"],
     ];
     for (const [body, expected] of cases) {
-      const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://x/v1", model: "m", fetchImpl: fakeFetch(body).impl });
+      const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://127.0.0.1/v1", model: "m", fetchImpl: fakeFetch(body).impl });
       const result = await createResourceExtractionService({ adapter }).execute(careerInput());
       expect(result).toEqual({ status: "failed", error: { code: expected } });
     }
@@ -66,7 +66,7 @@ describe("OpenAI-compatible small-model adapter (no network: fetch is injected)"
 
   it("maps HTTP errors and malformed bodies to MODEL_UNAVAILABLE", async () => {
     for (const fetcher of [fakeFetch({ error: "boom" }, 500), fakeFetch({ nope: true })]) {
-      const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://x/v1", model: "m", fetchImpl: fetcher.impl });
+      const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://127.0.0.1/v1", model: "m", fetchImpl: fetcher.impl });
       const result = await createResourceExtractionService({ adapter }).execute(careerInput());
       expect(result).toEqual({ status: "failed", error: { code: "MODEL_UNAVAILABLE" } });
     }
@@ -86,7 +86,7 @@ describe("OpenAI-compatible small-model adapter (no network: fetch is injected)"
       return new Response(stream, { status: 200, headers: { "content-type": "application/json" } });
     }) as unknown as typeof fetch;
     const adapter = createOpenAICompatibleAdapter({
-      baseUrl: "http://x/v1",
+      baseUrl: "http://127.0.0.1/v1",
       model: "m",
       fetchImpl: impl,
       maxResponseBytes: 1024,
@@ -104,7 +104,7 @@ describe("OpenAI-compatible small-model adapter (no network: fetch is injected)"
         headers: { "content-type": "application/json", "content-length": "2049" },
       })) as unknown as typeof fetch;
     const adapter = createOpenAICompatibleAdapter({
-      baseUrl: "http://x/v1",
+      baseUrl: "http://127.0.0.1/v1",
       model: "m",
       fetchImpl: impl,
       maxResponseBytes: 1024,
@@ -136,7 +136,7 @@ describe("OpenAI-compatible small-model adapter (no network: fetch is injected)"
       });
     }) as unknown as typeof fetch;
     const adapter = createOpenAICompatibleAdapter({
-      baseUrl: "http://x/v1",
+      baseUrl: "http://127.0.0.1/v1",
       model: "m",
       fetchImpl: impl,
       maxResponseBytes: 1024,
@@ -166,7 +166,7 @@ describe("OpenAI-compatible small-model adapter (no network: fetch is injected)"
       });
       return new Response(stream, { status: 500, headers: { "content-type": "text/plain" } });
     }) as unknown as typeof fetch;
-    const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://x/v1", model: "m", fetchImpl: impl });
+    const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://127.0.0.1/v1", model: "m", fetchImpl: impl });
     const result = await createResourceExtractionService({ adapter }).execute(careerInput());
     expect(result).toEqual({ status: "failed", error: { code: "MODEL_UNAVAILABLE" } });
     expect(calls).toBe(1);
@@ -209,7 +209,7 @@ describe("OpenAI-compatible small-model adapter (no network: fetch is injected)"
 
   it("does not follow redirects from the model server", async () => {
     const { impl, calls } = fakeFetch({ error: "redirect" }, 302);
-    const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://x/v1", model: "m", fetchImpl: impl });
+    const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://127.0.0.1/v1", model: "m", fetchImpl: impl });
     const result = await createResourceExtractionService({ adapter }).execute(careerInput());
     expect(result).toEqual({ status: "failed", error: { code: "MODEL_UNAVAILABLE" } });
     expect(calls).toHaveLength(1);
@@ -218,7 +218,7 @@ describe("OpenAI-compatible small-model adapter (no network: fetch is injected)"
 
   it("sends a strict provider schema without the unsupported outcome conditionals", async () => {
     const { impl, calls } = fakeFetch(completion(JSON.stringify(careerOutput())));
-    const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://x/v1", model: "m", fetchImpl: impl });
+    const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://127.0.0.1/v1", model: "m", fetchImpl: impl });
     await createResourceExtractionService({ adapter }).execute(careerInput());
     const sent = JSON.parse(String(calls[0]?.[1]?.body)) as Record<string, unknown>;
     const rf = sent["response_format"] as { json_schema: { strict: boolean; schema: Record<string, unknown> } };
@@ -243,7 +243,7 @@ describe("OpenAI-compatible small-model adapter (no network: fetch is injected)"
       return new Response(stream, { status: 200, headers: { "content-type": "application/json" } });
     }) as unknown as typeof fetch;
     const adapter = createOpenAICompatibleAdapter({
-      baseUrl: "http://x/v1",
+      baseUrl: "http://127.0.0.1/v1",
       model: "m",
       fetchImpl: impl,
       maxResponseBytes: 1024,
@@ -270,7 +270,7 @@ describe("OpenAI-compatible small-model adapter (no network: fetch is injected)"
       return new Response(stream, { status: 200, headers: { "content-type": "application/json" } });
     }) as unknown as typeof fetch;
     const adapter = createOpenAICompatibleAdapter({
-      baseUrl: "http://x/v1",
+      baseUrl: "http://127.0.0.1/v1",
       model: "m",
       fetchImpl: impl,
       maxResponseBytes: 1024,
@@ -286,11 +286,83 @@ describe("OpenAI-compatible small-model adapter (no network: fetch is injected)"
 
   it("sends an optional bearer token only in a header", async () => {
     const { impl, calls } = fakeFetch(completion(JSON.stringify(careerOutput())));
-    const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://x/v1", model: "m", apiKey: "local-test-token", fetchImpl: impl });
+    const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://127.0.0.1/v1", model: "m", apiKey: "local-test-token", fetchImpl: impl });
     await createResourceExtractionService({ adapter }).execute(careerInput());
     const [url, init] = calls[0] ?? [];
     expect(String(url)).not.toContain("local-test-token");
     expect(new Headers(init?.headers).get("authorization")).toBe("Bearer local-test-token");
+  });
+});
+
+describe("adapter factory transport policy (direct callers get the env path's rule)", () => {
+  it("rejects cleartext http for a non-loopback host at construction, before any request", () => {
+    const { impl, calls } = fakeFetch(completion("{}"));
+    expect(() =>
+      createOpenAICompatibleAdapter({
+        baseUrl: "http://models.example.org:8080/v1",
+        model: "m",
+        apiKey: "local-test-token",
+        fetchImpl: impl,
+      }),
+    ).toThrow(ModelConfigurationError);
+    expect(() =>
+      createOpenAICompatibleAdapter({ baseUrl: "http://models.example.org:8080/v1", model: "m", fetchImpl: impl }),
+    ).toThrow(/uses http for a non-loopback host; use https so evidence and credentials are not sent in cleartext/);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("rejects an invalid URL and a non-http(s) scheme at construction", () => {
+    const { impl } = fakeFetch(completion("{}"));
+    expect(() => createOpenAICompatibleAdapter({ baseUrl: "not a url", model: "m", fetchImpl: impl })).toThrow(
+      ModelConfigurationError,
+    );
+    expect(() => createOpenAICompatibleAdapter({ baseUrl: "ftp://127.0.0.1/v1", model: "m", fetchImpl: impl })).toThrow(
+      ModelConfigurationError,
+    );
+  });
+
+  it("allows loopback http at construction", () => {
+    const { impl } = fakeFetch(completion("{}"));
+    for (const baseUrl of ["http://127.0.0.1:8080/v1", "http://localhost:8080/v1", "http://[::1]:8080/v1"]) {
+      expect(() => createOpenAICompatibleAdapter({ baseUrl, model: "m", fetchImpl: impl })).not.toThrow();
+    }
+  });
+
+  it("allows remote https and sends the request to the https endpoint", async () => {
+    const { impl, calls } = fakeFetch(completion(JSON.stringify(careerOutput())));
+    const adapter = createOpenAICompatibleAdapter({
+      baseUrl: "https://models.example.org/v1",
+      model: "m",
+      fetchImpl: impl,
+    });
+    const result = await createResourceExtractionService({ adapter }).execute(careerInput());
+    expect(result.status).toBe("ok");
+    expect(String(calls[0]?.[0])).toBe("https://models.example.org/v1/chat/completions");
+  });
+
+  it("decides identically to the env-config path for every transport class", () => {
+    const cases: [string, boolean][] = [
+      ["http://models.example.org:8080/v1", false],
+      ["http://192.0.2.10/v1", false],
+      ["http://127.0.0.1:8080/v1", true],
+      ["http://localhost:8080/v1", true],
+      ["http://[::1]:8080/v1", true],
+      ["https://models.example.org/v1", true],
+      ["ftp://127.0.0.1/v1", false],
+      ["not a url", false],
+    ];
+    const { impl } = fakeFetch(completion("{}"));
+    for (const [baseUrl, allowed] of cases) {
+      const envOutcome = () => openAICompatibleConfigFromEnv({ SUZI_MODEL_BASE_URL: baseUrl, SUZI_MODEL_ID: "phi" });
+      const factoryOutcome = () => createOpenAICompatibleAdapter({ baseUrl, model: "phi", fetchImpl: impl });
+      if (allowed) {
+        expect(envOutcome, baseUrl).not.toThrow();
+        expect(factoryOutcome, baseUrl).not.toThrow();
+      } else {
+        expect(envOutcome, baseUrl).toThrow(ModelConfigurationError);
+        expect(factoryOutcome, baseUrl).toThrow(ModelConfigurationError);
+      }
+    }
   });
 });
 

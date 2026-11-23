@@ -81,6 +81,31 @@ export const MODEL_ENV = {
   apiKey: "SUZI_MODEL_API_KEY",
 } as const;
 
+/**
+ * The transport policy every configuration path enforces: the base URL
+ * must be a valid http(s) URL, and plain http is only acceptable for a
+ * loopback host — evidence and the optional bearer token would otherwise
+ * cross the network in cleartext. Plain HTTP is only acceptable for a
+ * model server on this same host (the documented self-hosted setup).
+ * `label` names the value in error messages (the env var on the env path).
+ */
+function assertSafeModelBaseUrl(baseUrl: string, label: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(baseUrl);
+  } catch {
+    throw new ModelConfigurationError(`${label} is not a valid URL.`);
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new ModelConfigurationError(`${label} must use http or https.`);
+  }
+  if (parsed.protocol === "http:" && !isLoopbackHost(parsed.hostname)) {
+    throw new ModelConfigurationError(
+      `${label} uses http for a non-loopback host; use https so evidence and credentials are not sent in cleartext.`,
+    );
+  }
+}
+
 /** Reads adapter config from the environment. Missing values are an error, not a mock fallback. */
 export function openAICompatibleConfigFromEnv(
   env: Readonly<Record<string, string | undefined>>,
@@ -96,23 +121,7 @@ export function openAICompatibleConfigFromEnv(
       `Model is not configured: set ${missing.join(" and ")}. There is no automatic fallback.`,
     );
   }
-  let parsed: URL;
-  try {
-    parsed = new URL(baseUrl);
-  } catch {
-    throw new ModelConfigurationError(`${MODEL_ENV.baseUrl} is not a valid URL.`);
-  }
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    throw new ModelConfigurationError(`${MODEL_ENV.baseUrl} must use http or https.`);
-  }
-  if (parsed.protocol === "http:" && !isLoopbackHost(parsed.hostname)) {
-    // Evidence and the optional bearer token would cross the network in
-    // cleartext. Plain HTTP is only acceptable for a model server on this
-    // same host (the documented self-hosted setup).
-    throw new ModelConfigurationError(
-      `${MODEL_ENV.baseUrl} uses http for a non-loopback host; use https so evidence and credentials are not sent in cleartext.`,
-    );
-  }
+  assertSafeModelBaseUrl(baseUrl, MODEL_ENV.baseUrl);
   const apiKey = env[MODEL_ENV.apiKey]?.trim();
   return { baseUrl, model, ...(apiKey ? { apiKey } : {}) };
 }
@@ -175,6 +184,10 @@ function isRenderedRequest(value: unknown): value is RenderedRequestShape {
 export function createOpenAICompatibleAdapter(
   config: OpenAICompatibleAdapterConfig,
 ): ExtractionAdapter {
+  // Enforce the same transport policy as the env-config path before
+  // snapshotting: direct callers must not be able to send evidence and
+  // the optional bearer token over cleartext http to a remote host.
+  assertSafeModelBaseUrl(config.baseUrl, "baseUrl");
   // Snapshot the configuration at construction. The caller keeps ownership
   // of the object it passed in; if it mutates or reuses that object later,
   // the request must still go to the model the descriptor (and therefore
