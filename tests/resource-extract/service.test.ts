@@ -433,6 +433,33 @@ describe("resource.extract.v1 service: existing-resource target label (owner rul
     expect(adapter.calls).toBe(1);
   });
 
+  it("matches a mixed-script label directly against prose (per-edge boundaries)", async () => {
+    // Goose P2 on aabbbc43: the all-or-nothing script classification
+    // still rejected a mixed Latin/Han label (ABC診所) followed
+    // directly by Chinese prose. Boundaries are per-edge: a script
+    // change at either edge of the match is a boundary.
+    const abstainAll: ResourceExtractionOutput = {
+      contract_version: "1.0",
+      outcome: "abstained",
+      abstention_reason: "insufficient_evidence",
+      claims: [],
+      unknown_fields: [
+        { field: "name", reason: "not_stated" },
+        { field: "cost", reason: "not_stated" },
+        { field: "hours", reason: "not_stated" },
+      ],
+      conflicts: [],
+      review_flags: [],
+    };
+    const input = careerInput({
+      target: { mode: "existing_resource", resource_id: "r1", name_hint: "ABC診所" },
+      evidence: [source("ev1", [{ block_id: "b1", text: "ABC診所每週二營業。" }])],
+    });
+    const { result, adapter } = await run(input, abstainAll);
+    expect(result.status).toBe("abstained");
+    expect(adapter.calls).toBe(1);
+  });
+
   it("matches the label through case and punctuation differences", async () => {
     const abstainAll: ResourceExtractionOutput = {
       contract_version: "1.0",

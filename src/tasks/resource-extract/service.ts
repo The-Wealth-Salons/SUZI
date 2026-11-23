@@ -237,38 +237,61 @@ function normalizeForMatch(text: string): string {
 /**
  * Scripts written without spaces between words (Han, kana, Hangul,
  * Thai, Lao). In these scripts a resource name in ordinary prose sits
- * directly against its neighbours, so substring presence — not a
- * space boundary — is the correct match semantics for a label written
- * entirely in such a script.
+ * directly against its neighbours, so a script change — not a space —
+ * is the word boundary.
  */
 const UNSPACED_SCRIPT_CHAR =
   /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}\p{Script=Lao}]/u;
 
-function isUnspacedScriptLabel(normalizedLabel: string): boolean {
-  let sawUnspaced = false;
-  for (const ch of normalizedLabel) {
-    if (/\p{L}/u.test(ch)) {
-      if (!UNSPACED_SCRIPT_CHAR.test(ch)) return false;
-      sawUnspaced = true;
-    }
+/**
+ * One edge of a candidate match is a real boundary unless the match
+ * plainly continues a longer word: both the label's edge character and
+ * the neighbouring evidence character are letters/digits of a
+ * space-delimited script (the "East Clinic" inside "Northeast Clinic"
+ * / "East Clinics" cases). A string edge, a separator, or a script
+ * change on either side is a boundary — which is what lets a name in
+ * an unspaced or mixed script (東區診所, ABC診所) match directly
+ * against the prose that follows it.
+ */
+function isBoundaryEdge(labelEdge: string, neighbour: string | undefined): boolean {
+  if (neighbour === undefined) return true;
+  if (neighbour === " ") return true;
+  if (UNSPACED_SCRIPT_CHAR.test(labelEdge) || UNSPACED_SCRIPT_CHAR.test(neighbour)) {
+    return true;
   }
-  return sawUnspaced;
+  return false;
+}
+
+/** True when the normalized label occurs in the normalized text with a real boundary at both edges of some occurrence. */
+function labelOccursInText(normalizedLabel: string, normalizedText: string): boolean {
+  const needle = [...normalizedLabel];
+  const haystack = [...normalizedText];
+  if (needle.length === 0 || needle.length > haystack.length) return false;
+  for (let i = 0; i + needle.length <= haystack.length; i++) {
+    let j = 0;
+    while (j < needle.length && haystack[i + j] === needle[j]) j++;
+    if (j < needle.length) continue;
+    const left = isBoundaryEdge(needle[0] as string, i === 0 ? undefined : haystack[i - 1]);
+    const end = i + needle.length;
+    const right = isBoundaryEdge(
+      needle[needle.length - 1] as string,
+      end >= haystack.length ? undefined : haystack[end],
+    );
+    if (left && right) return true;
+  }
+  return false;
 }
 
 /**
  * Owner ruling (B., 2026-11-23, approved as recommended): an
  * existing-resource request must carry an evidence-matchable target
  * label. The amended input schema requires `name_hint` for
- * `existing_resource`; this cross-check is the matchability half. The
- * normalized label must appear in at least one evidence block: as a
- * complete token phrase (space-padded on both sides, so "East Clinic"
- * matches neither "Northeast Clinic" nor "East Clinics") for labels in
- * space-delimited scripts, or as a plain substring for labels written
- * entirely in an unspaced script, where names carry no space boundary
- * in ordinary prose. A label that matches nothing is rejected
- * fail-closed (INVALID_INPUT) before inference, because without it the
- * model cannot tell the caller's target from any other resource the
- * evidence describes.
+ * `existing_resource`; this cross-check is the matchability half — the
+ * normalized label must occur in at least one evidence block with a
+ * real boundary at both edges (see isBoundaryEdge). A label that
+ * matches nothing is rejected fail-closed (INVALID_INPUT) before
+ * inference, because without it the model cannot tell the caller's
+ * target from any other resource the evidence describes.
  */
 function targetLabelMatchesEvidence(input: ResourceExtractionInput): boolean {
   if (input.target.mode !== "existing_resource") return true;
@@ -276,13 +299,9 @@ function targetLabelMatchesEvidence(input: ResourceExtractionInput): boolean {
   if (label === undefined) return false;
   const needle = normalizeForMatch(label);
   if (needle.length === 0) return false;
-  const unspaced = isUnspacedScriptLabel(needle);
   for (const source of input.evidence) {
     for (const block of source.blocks) {
-      const haystack = normalizeForMatch(block.text);
-      if (unspaced ? haystack.includes(needle) : ` ${haystack} `.includes(` ${needle} `)) {
-        return true;
-      }
+      if (labelOccursInText(needle, normalizeForMatch(block.text))) return true;
     }
   }
   return false;
