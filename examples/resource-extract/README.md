@@ -42,11 +42,16 @@ to "free". `hours` comes back as `unknown` / `not_stated`.
 
 1. Copy `input.json` and change `request_id`, `target`, `requested_fields` and `evidence`.
 2. Recompute each source's `content_sha256` with `npm run --silent hash-evidence -- your-input.json`.
+   The command only **prints** each digest — copy each printed value into the matching
+   source's `content_sha256` field in your input file. Skipping this step leaves a stale
+   digest in place and the run fails with `INVALID_INPUT` before extraction.
 3. Run `npx tsx examples/resource-extract/run.ts --adapter mock --input your-input.json`.
 
-With the mock adapter, changed evidence **fails on purpose** (`EVIDENCE_QUOTE_INVALID`):
-the canned quotes no longer appear in your text. To extract from new evidence, use the
-small-model adapter (see the root README):
+With the mock adapter, changed evidence fails with `EVIDENCE_QUOTE_INVALID` **when the
+canned quotes are missing from, or ambiguous in, your text**: quote validation checks the
+canned quotes against the supplied blocks. Changing other evidence while keeping those
+quotes intact and unambiguous can still return `ok` with the same canned claims. To extract
+from new evidence, use the small-model adapter (see the root README):
 
 ```bash
 export SUZI_MODEL_BASE_URL=http://127.0.0.1:8080/v1   # llama.cpp / Ollama / vLLM server

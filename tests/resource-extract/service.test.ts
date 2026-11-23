@@ -4,6 +4,7 @@ import {
   createResourceExtractionService,
   MAX_MODEL_OUTPUT_LENGTH,
   MAX_TOTAL_EVIDENCE_UTF16,
+  validateResultData,
 } from "../../src/tasks/resource-extract/index.js";
 import type {
   AdapterResponse,
@@ -60,6 +61,19 @@ describe("resource.extract.v1 service: success", () => {
     expect(result.data.receipt.adapter.mock).toBe(true);
     expect(result.data.receipt.prompt_package).toBe("resource.extract.v1@1.0.0");
     expect(result.data.receipt.input_digest).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("result contract enforces the outcome rules on its own", async () => {
+    const { result } = await run(careerInput());
+    if (result.status !== "ok") throw new Error("expected ok");
+    const data = JSON.parse(JSON.stringify(result.data)) as Record<string, unknown>;
+    expect(validateResultData(data)).toBe(true);
+    // Used standalone, the result validator must reject the combinations
+    // the model-output contract rejects: abstentions carrying claims and
+    // extractions carrying none.
+    expect(validateResultData({ ...data, outcome: "abstained", abstention_reason: "multiple_resources" })).toBe(false);
+    expect(validateResultData({ ...data, claims: [] })).toBe(false);
+    expect(validateResultData({ ...data, abstention_reason: "multiple_resources" })).toBe(false);
   });
 
   it("is deterministic for the same input and adapter output", async () => {
@@ -139,7 +153,11 @@ describe("resource.extract.v1 service: success", () => {
       outcome: "abstained",
       abstention_reason: "multiple_resources",
       claims: [],
-      unknown_fields: [{ field: "hours", reason: "not_stated" }],
+      unknown_fields: [
+        { field: "name", reason: "target_unclear" },
+        { field: "cost", reason: "target_unclear" },
+        { field: "hours", reason: "not_stated" },
+      ],
       conflicts: [],
       review_flags: [{ code: "possible_multiple_resources", evidence: [ref("Example Career Center")] }],
     };
@@ -152,7 +170,11 @@ describe("resource.extract.v1 service: success", () => {
     expect(result.data.outcome).toBe("abstained");
     expect(result.data.abstention_reason).toBe("multiple_resources");
     expect(result.data.request_id).toBe("req-test-1");
-    expect(result.data.unknown_fields).toEqual([{ field: "hours", reason: "not_stated" }]);
+    expect(result.data.unknown_fields).toEqual([
+      { field: "name", reason: "target_unclear" },
+      { field: "cost", reason: "target_unclear" },
+      { field: "hours", reason: "not_stated" },
+    ]);
     expect(result.data.review_flags).toEqual([
       {
         code: "possible_multiple_resources",
@@ -310,6 +332,8 @@ describe("resource.extract.v1 service: model output failures", () => {
     ["requested field not covered", { ...base, unknown_fields: [] }, "FIELD_COVERAGE_INVALID"],
     ["field both claimed and unknown", { ...base, unknown_fields: [...base.unknown_fields, { field: "cost", reason: "ambiguous" }] }, "FIELD_COVERAGE_INVALID"],
     ["duplicate claim ids", { ...base, claims: [claim("c1", "name", "Example Career Center"), claim("c1", "cost", "Initial consultations are free.")] }, "CLAIM_INTEGRITY_INVALID"],
+    ["exact duplicate claims with different ids", { ...base, claims: [...base.claims, claim("c9", "cost", "Initial consultations are free.")] }, "CLAIM_INTEGRITY_INVALID"],
+    ["abstention omitting requested-field reasons", { ...base, outcome: "abstained", abstention_reason: "multiple_resources", claims: [], conflicts: [], unknown_fields: [{ field: "hours", reason: "not_stated" }] }, "FIELD_COVERAGE_INVALID"],
     ["orphan conflict claim id", { ...base, conflicts: [{ field: "cost", claim_ids: ["c2", "c99"], description: "x" }] }, "CLAIM_INTEGRITY_INVALID"],
     ["conflict field mismatch", { ...base, conflicts: [{ field: "cost", claim_ids: ["c1", "c2"], description: "x" }] }, "CLAIM_INTEGRITY_INVALID"],
   ];

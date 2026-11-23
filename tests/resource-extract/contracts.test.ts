@@ -140,4 +140,19 @@ describe("prompt package and rendering", () => {
     const pkg = loadPromptPackage();
     expect(JSON.stringify(renderRequest(input, pkg))).toBe(JSON.stringify(renderRequest(input, pkg)));
   });
+
+  it("hands each render owned copies of the schema and generation settings", () => {
+    const input = careerInput();
+    if (!validateInput(input)) throw new Error("fixture invalid");
+    const pkg = loadPromptPackage();
+    const first = renderRequest(input, pkg);
+    // A pluggable adapter editing what it was handed must not leak into
+    // later renders or into the package the receipt digests describe.
+    (first.response_format.schema as Record<string, unknown>)["tampered"] = true;
+    first.generation.temperature = 99;
+    const second = renderRequest(input, pkg);
+    expect(second.response_format.schema).not.toHaveProperty("tampered");
+    expect(second.generation.temperature).toBe(0);
+    expect(pkg.generation.temperature).toBe(0);
+  });
 });

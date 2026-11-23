@@ -47,6 +47,16 @@ export interface PromptPackage {
 }
 
 /**
+ * Immutable pins for the behavior-affecting manifest values of package
+ * 1.0.0. The system-prompt digest alone cannot cover these: the manifest's
+ * generation settings and prompt filename are read from the same file and
+ * change inference behavior (or which file is read) without changing the
+ * prompt bytes. Any change here requires a new pinned package version.
+ */
+const PINNED_SYSTEM_PROMPT_FILE = "system.md";
+const PINNED_GENERATION = { temperature: 0, max_output_tokens: 2048 } as const;
+
+/**
  * Load the pinned prompt package and refuse to run if the system prompt
  * does not match the digest recorded in its manifest.
  */
@@ -57,8 +67,21 @@ export function loadPromptPackage(): PromptPackage {
   if (!isPromptManifest(manifestRaw)) {
     throw new Error("Prompt package manifest is invalid");
   }
+  // The configured filename is constrained to the one pinned file in the
+  // package directory: no absolute paths, no traversal, no substitution.
+  if (manifestRaw.system_prompt_file !== PINNED_SYSTEM_PROMPT_FILE) {
+    throw new Error("Prompt package manifest names an unpinned system prompt file");
+  }
+  if (
+    manifestRaw.generation.temperature !== PINNED_GENERATION.temperature ||
+    manifestRaw.generation.max_output_tokens !== PINNED_GENERATION.max_output_tokens
+  ) {
+    throw new Error(
+      "Prompt package generation settings differ from the pinned values for this version",
+    );
+  }
   const systemPrompt = readFileSync(
-    fileURLToPath(new URL(manifestRaw.system_prompt_file, PACKAGE_DIR)),
+    fileURLToPath(new URL(PINNED_SYSTEM_PROMPT_FILE, PACKAGE_DIR)),
     "utf8",
   );
   const digest = sha256Hex(Buffer.from(systemPrompt, "utf8"));
@@ -71,7 +94,7 @@ export function loadPromptPackage(): PromptPackage {
     id: PROMPT_PACKAGE_ID,
     systemPrompt,
     digest,
-    generation: manifestRaw.generation,
+    generation: { ...manifestRaw.generation },
   };
 }
 
@@ -136,8 +159,11 @@ export function renderRequest(
     response_format: {
       type: "json_schema",
       name: "resource_extract_v1_output",
-      schema: outputSchema,
+      // Owned copies: a pluggable adapter must not be able to mutate the
+      // shared schema or generation objects and affect later renders (the
+      // receipt keeps recording the original schema digest).
+      schema: JSON.parse(JSON.stringify(outputSchema)) as Record<string, unknown>,
     },
-    generation: pkg.generation,
+    generation: { ...pkg.generation },
   };
 }

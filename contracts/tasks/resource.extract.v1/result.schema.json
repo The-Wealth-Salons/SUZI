@@ -302,6 +302,62 @@
       }
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "outcome"
+        ],
+        "properties": {
+          "outcome": {
+            "const": "extracted"
+          }
+        },
+        "type": "object"
+      },
+      "then": {
+        "properties": {
+          "abstention_reason": {
+            "const": null
+          },
+          "claims": {
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "outcome"
+        ],
+        "properties": {
+          "outcome": {
+            "const": "abstained"
+          }
+        },
+        "type": "object"
+      },
+      "then": {
+        "properties": {
+          "abstention_reason": {
+            "type": "string"
+          },
+          "claims": {
+            "maxItems": 0,
+            "type": "array"
+          },
+          "conflicts": {
+            "maxItems": 0,
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    }
+  ],
   "$defs": {
     "id": {
       "type": "string",

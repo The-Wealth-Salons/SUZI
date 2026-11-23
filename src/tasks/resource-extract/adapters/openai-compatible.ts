@@ -105,8 +105,51 @@ export function openAICompatibleConfigFromEnv(
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
     throw new ModelConfigurationError(`${MODEL_ENV.baseUrl} must use http or https.`);
   }
+  if (parsed.protocol === "http:" && !isLoopbackHost(parsed.hostname)) {
+    // Evidence and the optional bearer token would cross the network in
+    // cleartext. Plain HTTP is only acceptable for a model server on this
+    // same host (the documented self-hosted setup).
+    throw new ModelConfigurationError(
+      `${MODEL_ENV.baseUrl} uses http for a non-loopback host; use https so evidence and credentials are not sent in cleartext.`,
+    );
+  }
   const apiKey = env[MODEL_ENV.apiKey]?.trim();
   return { baseUrl, model, ...(apiKey ? { apiKey } : {}) };
+}
+
+function isLoopbackHost(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  return host === "localhost" || host === "::1" || /^127(?:\.\d{1,3}){3}$/.test(host);
+}
+
+/**
+ * Build the chat-completions endpoint from the configured base URL. The
+ * path segment is appended to the URL path, so a query string in the base
+ * URL (for example an api-version parameter) stays a query string instead
+ * of swallowing the route.
+ */
+function chatCompletionsEndpoint(baseUrl: string): string {
+  try {
+    const url = new URL(baseUrl);
+    url.pathname = `${url.pathname.replace(/\/+$/, "")}/chat/completions`;
+    return url.toString();
+  } catch {
+    return `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
+  }
+}
+
+/**
+ * The provider-facing strict schema is a subset of the contract schema:
+ * the top-level `allOf` outcome conditionals use keywords strict
+ * Structured-Outputs grammars do not support, and a strict endpoint can
+ * reject the whole request before inference. Those conditionals stay
+ * enforced after parsing by the full AJV validation and the service's
+ * outcome checks; everything else is sent unchanged.
+ */
+function providerStrictSchema(schema: Record<string, unknown>): Record<string, unknown> {
+  const copy = JSON.parse(JSON.stringify(schema)) as Record<string, unknown>;
+  delete copy["allOf"];
+  return copy;
 }
 
 interface RenderedRequestShape {
@@ -132,29 +175,47 @@ function isRenderedRequest(value: unknown): value is RenderedRequestShape {
 export function createOpenAICompatibleAdapter(
   config: OpenAICompatibleAdapterConfig,
 ): ExtractionAdapter {
-  const fetchImpl = config.fetchImpl ?? fetch;
-  const endpoint = `${config.baseUrl.replace(/\/+$/, "")}/chat/completions`;
+  // Snapshot the configuration at construction. The caller keeps ownership
+  // of the object it passed in; if it mutates or reuses that object later,
+  // the request must still go to the model the descriptor (and therefore
+  // the receipt) names, with the credentials and limits captured here.
+  const snapshot = {
+    baseUrl: config.baseUrl,
+    model: config.model,
+    ...(config.apiKey !== undefined ? { apiKey: config.apiKey } : {}),
+    timeoutMs: config.timeoutMs ?? 120_000,
+    maxResponseBytes: config.maxResponseBytes ?? MAX_MODEL_RESPONSE_BYTES,
+    fetchImpl: config.fetchImpl ?? fetch,
+  };
+  const endpoint = chatCompletionsEndpoint(snapshot.baseUrl);
   return {
     descriptor: {
       adapter_id: "openai-compatible-chat@1",
-      model_ref: config.model,
+      model_ref: snapshot.model,
       mock: false,
     },
     async generate(request: unknown): Promise<AdapterResponse> {
       if (!isRenderedRequest(request)) throw new Error("unsupported request");
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), config.timeoutMs ?? 120_000);
+      const timer = setTimeout(() => {
+        controller.abort();
+      }, snapshot.timeoutMs);
       let completed = false;
       try {
-        const res = await fetchImpl(endpoint, {
+        const res = await snapshot.fetchImpl(endpoint, {
           method: "POST",
           signal: controller.signal,
+          // Never follow redirects: a compromised or misconfigured model
+          // server must not be able to send evidence and credentials to a
+          // destination the operator never configured. A 3xx is not ok
+          // and fails below like any other non-2xx response.
+          redirect: "manual",
           headers: {
             "content-type": "application/json",
-            ...(config.apiKey ? { authorization: `Bearer ${config.apiKey}` } : {}),
+            ...(snapshot.apiKey ? { authorization: `Bearer ${snapshot.apiKey}` } : {}),
           },
           body: JSON.stringify({
-            model: config.model,
+            model: snapshot.model,
             messages: request.messages,
             temperature: request.generation.temperature,
             max_tokens: request.generation.max_output_tokens,
@@ -163,7 +224,7 @@ export function createOpenAICompatibleAdapter(
               json_schema: {
                 name: request.response_format.name,
                 strict: true,
-                schema: request.response_format.schema,
+                schema: providerStrictSchema(request.response_format.schema),
               },
             },
           }),
@@ -174,7 +235,7 @@ export function createOpenAICompatibleAdapter(
           await res.body?.cancel().catch(() => undefined);
           throw new Error(`model server returned HTTP ${res.status}`);
         }
-        const text = await readBodyWithLimit(res, config.maxResponseBytes ?? MAX_MODEL_RESPONSE_BYTES);
+        const text = await readBodyWithLimit(res, snapshot.maxResponseBytes);
         let body: unknown;
         try {
           body = JSON.parse(text);

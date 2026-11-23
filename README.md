@@ -47,7 +47,8 @@ There are two adapters:
 
 ## Requirements
 
-Node.js **20.19 or newer** (tested on 20.19.2 with npm 11.21.1; see `.nvmrc`).
+Node.js **20.19+ on the 20 line, or 22.12+ on the 22 line** (the range the locked
+test toolchain supports; tested on 20.19.2 with npm 11.21.1; see `.nvmrc`).
 
 ## Commands
 
@@ -57,7 +58,7 @@ npm test                                 # vitest run (86 tests, offline)
 npm run typecheck                        # tsc --noEmit, strict
 npm run --silent example                 # offline MOCK example, JSON to stdout
 npm run --silent example > result.json   # save the result
-npm run --silent hash-evidence -- input.json   # print content_sha256 for each source
+npm run --silent hash-evidence -- examples/resource-extract/input.json   # print content_sha256 for each source
 ```
 
 Sample output (truncated; full file at `examples/resource-extract/expected-output.json`):

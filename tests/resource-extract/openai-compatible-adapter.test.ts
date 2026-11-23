@@ -173,6 +173,117 @@ describe("OpenAI-compatible small-model adapter (no network: fetch is injected)"
     expect(cancelled).toBe(true);
   });
 
+  it("snapshots the configuration at construction, ignoring later caller mutation", async () => {
+    const { impl, calls } = fakeFetch(completion(JSON.stringify(careerOutput())));
+    const config = {
+      baseUrl: "http://127.0.0.1:8080/v1",
+      model: "original-model",
+      apiKey: "original-key",
+      fetchImpl: impl,
+    };
+    const adapter = createOpenAICompatibleAdapter(config);
+    config.model = "mutated-model";
+    config.apiKey = "mutated-key";
+    config.baseUrl = "http://127.0.0.1:9999/v9";
+    const result = await createResourceExtractionService({ adapter }).execute(careerInput());
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") expect(result.data.receipt.adapter.model_ref).toBe("original-model");
+    const [url, init] = calls[0] ?? [];
+    expect(String(url)).toBe("http://127.0.0.1:8080/v1/chat/completions");
+    const sent = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    expect(sent["model"]).toBe("original-model");
+    expect(new Headers(init?.headers).get("authorization")).toBe("Bearer original-key");
+  });
+
+  it("appends the chat route to the URL path when the base URL carries a query string", async () => {
+    const { impl, calls } = fakeFetch(completion(JSON.stringify(careerOutput())));
+    const adapter = createOpenAICompatibleAdapter({
+      baseUrl: "http://127.0.0.1:8080/v1?api-version=2024-10-21",
+      model: "m",
+      fetchImpl: impl,
+    });
+    const result = await createResourceExtractionService({ adapter }).execute(careerInput());
+    expect(result.status).toBe("ok");
+    expect(String(calls[0]?.[0])).toBe("http://127.0.0.1:8080/v1/chat/completions?api-version=2024-10-21");
+  });
+
+  it("does not follow redirects from the model server", async () => {
+    const { impl, calls } = fakeFetch({ error: "redirect" }, 302);
+    const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://x/v1", model: "m", fetchImpl: impl });
+    const result = await createResourceExtractionService({ adapter }).execute(careerInput());
+    expect(result).toEqual({ status: "failed", error: { code: "MODEL_UNAVAILABLE" } });
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.[1]?.redirect).toBe("manual");
+  });
+
+  it("sends a strict provider schema without the unsupported outcome conditionals", async () => {
+    const { impl, calls } = fakeFetch(completion(JSON.stringify(careerOutput())));
+    const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://x/v1", model: "m", fetchImpl: impl });
+    await createResourceExtractionService({ adapter }).execute(careerInput());
+    const sent = JSON.parse(String(calls[0]?.[1]?.body)) as Record<string, unknown>;
+    const rf = sent["response_format"] as { json_schema: { strict: boolean; schema: Record<string, unknown> } };
+    expect(rf.json_schema.strict).toBe(true);
+    expect(rf.json_schema.schema).not.toHaveProperty("allOf");
+    expect(rf.json_schema.schema["properties"]).toHaveProperty("claims");
+  });
+
+  it("rejects a streamed body whose UTF-8 bytes exceed the limit while its string length does not", async () => {
+    // "é" is one UTF-16 code unit but two UTF-8 bytes: this finite body's
+    // string length stays under the cap while its encoded size exceeds it.
+    const bodyText = JSON.stringify(completion("é".repeat(500)));
+    expect(bodyText.length).toBeLessThan(1024);
+    expect(new TextEncoder().encode(bodyText).byteLength).toBeGreaterThan(1024);
+    const impl = (async () => {
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(bodyText));
+          controller.close();
+        },
+      });
+      return new Response(stream, { status: 200, headers: { "content-type": "application/json" } });
+    }) as unknown as typeof fetch;
+    const adapter = createOpenAICompatibleAdapter({
+      baseUrl: "http://x/v1",
+      model: "m",
+      fetchImpl: impl,
+      maxResponseBytes: 1024,
+    });
+    await expect(
+      adapter.generate({
+        messages: [{ role: "user", content: "x" }],
+        response_format: { name: "out", schema: {} },
+        generation: { temperature: 0, max_output_tokens: 16 },
+      }),
+    ).rejects.toThrow("model response too large");
+  });
+
+  it("accepts a valid streamed response at under the byte limit", async () => {
+    const bodyText = JSON.stringify(completion("ok"));
+    expect(new TextEncoder().encode(bodyText).byteLength).toBeLessThan(1024);
+    const impl = (async () => {
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(bodyText));
+          controller.close();
+        },
+      });
+      return new Response(stream, { status: 200, headers: { "content-type": "application/json" } });
+    }) as unknown as typeof fetch;
+    const adapter = createOpenAICompatibleAdapter({
+      baseUrl: "http://x/v1",
+      model: "m",
+      fetchImpl: impl,
+      maxResponseBytes: 1024,
+    });
+    const response = await adapter.generate({
+      messages: [{ role: "user", content: "x" }],
+      response_format: { name: "out", schema: {} },
+      generation: { temperature: 0, max_output_tokens: 16 },
+    });
+    expect(response.outputText).toBe("ok");
+    expect(response.finishReason).toBe("stop");
+  });
+
   it("sends an optional bearer token only in a header", async () => {
     const { impl, calls } = fakeFetch(completion(JSON.stringify(careerOutput())));
     const adapter = createOpenAICompatibleAdapter({ baseUrl: "http://x/v1", model: "m", apiKey: "local-test-token", fetchImpl: impl });
@@ -195,5 +306,17 @@ describe("model configuration", () => {
       baseUrl: "http://127.0.0.1:8080/v1",
       model: "phi",
     });
+  });
+
+  it("rejects cleartext http for non-loopback hosts but allows loopback http and remote https", () => {
+    expect(() =>
+      openAICompatibleConfigFromEnv({ SUZI_MODEL_BASE_URL: "http://models.example.org:8080/v1", SUZI_MODEL_ID: "phi" }),
+    ).toThrow(ModelConfigurationError);
+    expect(
+      openAICompatibleConfigFromEnv({ SUZI_MODEL_BASE_URL: "http://localhost:8080/v1", SUZI_MODEL_ID: "phi" }).baseUrl,
+    ).toBe("http://localhost:8080/v1");
+    expect(
+      openAICompatibleConfigFromEnv({ SUZI_MODEL_BASE_URL: "https://models.example.org/v1", SUZI_MODEL_ID: "phi" }).baseUrl,
+    ).toBe("https://models.example.org/v1");
   });
 });

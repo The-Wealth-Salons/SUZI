@@ -291,20 +291,37 @@ function checkFieldCoverage(
   for (const conflict of output.conflicts) {
     if (!requestedSet.has(conflict.field)) throw new TaskFailure("FIELD_COVERAGE_INVALID");
   }
-  if (output.outcome === "extracted") {
-    for (const field of requested) {
-      if (!claimed.has(field) && !unknown.has(field)) {
-        throw new TaskFailure("FIELD_COVERAGE_INVALID");
-      }
+  // Coverage applies to both outcomes (prompt rule 3): an abstention has
+  // no claims by contract, so every requested field must be accounted for
+  // in unknown_fields — otherwise the caller gets no reason for the fields
+  // the abstention silently dropped while the receipt records coverage as
+  // passed.
+  for (const field of requested) {
+    if (!claimed.has(field) && !unknown.has(field)) {
+      throw new TaskFailure("FIELD_COVERAGE_INVALID");
     }
   }
 }
 
 function checkClaimIntegrity(output: ResourceExtractionOutput): void {
   const fieldById = new Map<string, ResourceField>();
+  const claimSignatures = new Set<string>();
   for (const claim of output.claims) {
     if (fieldById.has(claim.claim_id)) throw new TaskFailure("CLAIM_INTEGRITY_INVALID");
     fieldById.set(claim.claim_id, claim.field);
+    // Distinct claim_ids do not make two claims distinct facts: an exact
+    // repeat (same field, value, assertion kind and evidence) would be
+    // double-counted downstream, so reject it like a repeated id.
+    const signature = JSON.stringify([
+      claim.field,
+      claim.value,
+      claim.assertion_kind,
+      claim.evidence
+        .map((ref) => JSON.stringify([ref.evidence_id, ref.block_id, ref.quote]))
+        .sort(),
+    ]);
+    if (claimSignatures.has(signature)) throw new TaskFailure("CLAIM_INTEGRITY_INVALID");
+    claimSignatures.add(signature);
   }
   const seenConflicts = new Set<string>();
   for (const conflict of output.conflicts) {
