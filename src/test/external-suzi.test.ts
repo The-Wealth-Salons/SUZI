@@ -42,10 +42,8 @@ describe("external SUZI adapter", () => {
   it("writes through the mocked external client only when ready", async () => {
     const insert = vi.fn(() => ({ select: () => ({ single: async () => ({ data: { id: "r1" }, error: null }) }) }));
     const db = {
-      from: (t: string) =>
-        t === "submission_rate_limits"
-          ? { select: () => ({ eq: () => ({ gte: async () => ({ count: 0, error: null }) }) }), insert: async () => ({}) }
-          : { insert },
+      rpc: async () => ({ data: true, error: null }),
+      from: () => ({ insert }),
     };
     const client = await getExternalSuziClient(GOOD, () => db as never);
     expect(await persistContribution(client, idea, "h")).toEqual({ ok: true, id: "r1" });

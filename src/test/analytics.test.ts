@@ -93,3 +93,45 @@ describe("conversions", () => {
     expect(a.trackConversion("", "share_idea")).toBe(false);
   });
 });
+
+describe("consent revocation during initialization", () => {
+  it("does not initialize any vendor when consent is revoked while the import is pending", async () => {
+    vi.stubEnv("VITE_SUZI_AMPLITUDE_API_KEY", AMP);
+    vi.stubEnv("VITE_SUZI_GA4_MEASUREMENT_ID", "G-ABC1234");
+    setConsent("granted");
+    const pending = a.startAnalytics();
+    // Revoke before the awaited vendor import resolves: stopAnalytics() has
+    // no Amplitude handle or GA id to tear down yet.
+    setConsent("denied");
+    a.stopAnalytics();
+    expect(await pending).toBe(false);
+    expect(init).not.toHaveBeenCalled();
+    expect(document.querySelectorAll("script[data-suzi-analytics]")).toHaveLength(0);
+    a.trackPageView("/");
+    expect(track).not.toHaveBeenCalled();
+  });
+
+  it("queues a conversion submitted during initialization and delivers it once ready", async () => {
+    vi.stubEnv("VITE_SUZI_AMPLITUDE_API_KEY", AMP);
+    setConsent("granted");
+    const pending = a.startAnalytics();
+    expect(a.trackConversion("id-pending", "share_idea")).toBe(true);
+    expect(track).not.toHaveBeenCalled();
+    expect(await pending).toBe(true);
+    const conv = track.mock.calls.filter((c) => c[0] === "conversion_completed");
+    expect(conv).toHaveLength(1);
+    expect(a.trackConversion("id-pending", "share_idea")).toBe(false);
+    expect(track.mock.calls.filter((c) => c[0] === "conversion_completed")).toHaveLength(1);
+  });
+
+  it("drops a queued conversion when consent is revoked before initialization completes", async () => {
+    vi.stubEnv("VITE_SUZI_AMPLITUDE_API_KEY", AMP);
+    setConsent("granted");
+    const pending = a.startAnalytics();
+    expect(a.trackConversion("id-dropped", "share_idea")).toBe(true);
+    setConsent("denied");
+    a.stopAnalytics();
+    expect(await pending).toBe(false);
+    expect(track).not.toHaveBeenCalled();
+  });
+});

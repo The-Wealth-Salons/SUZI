@@ -14,15 +14,20 @@ export async function persistContribution(
 ): Promise<SubmitResult> {
   if (!db) return { ok: false, error: UNAVAILABLE };
   try {
-    const since = new Date(Date.now() - 3600_000).toISOString();
-    const { count, error: rlErr } = await db
-      .from("submission_rate_limits")
-      .select("id", { count: "exact", head: true })
-      .eq("client_hash", clientHash)
-      .gte("created_at", since);
+    // Quota check + reservation are a single atomic database operation
+    // (reserve_submission_slot in the proposed migration): it takes a
+    // per-client advisory lock, counts the window and inserts the
+    // reservation in one transaction, so concurrent requests cannot all
+    // pass the same count. Fail closed: a reservation error or a denied
+    // slot stops the contribution write.
+    const { data: reserved, error: rlErr } = await db.rpc("reserve_submission_slot", {
+      _client_hash: clientHash,
+      _limit: LIMIT_PER_HOUR,
+      _window_seconds: 3600,
+    });
     if (rlErr) return { ok: false, error: FAILED };
-    if ((count ?? 0) >= LIMIT_PER_HOUR) return { ok: false, error: "Too many submissions. Please try again in an hour." };
-    await db.from("submission_rate_limits").insert({ client_hash: clientHash });
+    if (!reserved)
+      return { ok: false, error: "Too many submissions. Please try again in an hour." };
     const email = data.email ? data.email : null;
     const { data: row, error } = await db
       .from("pinq_contributions")

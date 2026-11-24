@@ -73,3 +73,26 @@ ALTER TABLE public.pinq_contributions
   ADD COLUMN rights_status text NOT NULL DEFAULT 'unreviewed'
     CHECK (rights_status IN ('unreviewed','under_review','cleared_for_review_only','declined')),
   ADD COLUMN source_system text NOT NULL DEFAULT 'suzilabs_web_v1';
+
+-- Atomic rate-limit reservation for persistContribution: the quota count and
+-- the reservation insert happen in one transaction under a per-client
+-- advisory lock, so concurrent submissions cannot all pass the same count.
+-- Returns true when a slot was reserved, false when the limit is reached.
+CREATE OR REPLACE FUNCTION public.reserve_submission_slot(_client_hash text, _limit integer, _window_seconds integer DEFAULT 3600)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  _count integer;
+BEGIN
+  PERFORM pg_advisory_xact_lock(hashtextextended(_client_hash, 0));
+  SELECT count(*) INTO _count
+    FROM public.submission_rate_limits
+    WHERE client_hash = _client_hash
+      AND created_at >= now() - make_interval(secs => _window_seconds);
+  IF _count >= _limit THEN
+    RETURN false;
+  END IF;
+  INSERT INTO public.submission_rate_limits (client_hash) VALUES (_client_hash);
+  RETURN true;
+END $$;
+REVOKE EXECUTE ON FUNCTION public.reserve_submission_slot(text, integer, integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.reserve_submission_slot(text, integer, integer) TO service_role;
