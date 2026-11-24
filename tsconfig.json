@@ -2,6 +2,9 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
+    "tests/**/*.ts",
+    "examples/**/*.ts",
+    "scripts/**/*.ts",
     "vite.config.ts",
     "vitest.config.ts",
     "eslint.config.js"
@@ -11,13 +14,13 @@
     "jsx": "react-jsx",
     "module": "ESNext",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["vite/client", "vitest/globals"],
-
+    "types": ["vite/client", "vitest/globals", "node"],
     "moduleResolution": "Bundler",
     "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
     "verbatimModuleSyntax": false,
     "noEmit": true,
-
     "skipLibCheck": true,
     "strict": true,
     "noUnusedLocals": false,

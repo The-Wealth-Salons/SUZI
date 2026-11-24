@@ -1,0 +1,35 @@
+{
+  "contract_version": "1.0",
+  "request_id": "example-req-0001",
+  "target": {
+    "mode": "new_candidate",
+    "name_hint": "Example Career Center"
+  },
+  "requested_fields": ["name", "cost", "hours"],
+  "evidence": [
+    {
+      "evidence_id": "ev-0001",
+      "source_ref": "suzi-synthetic:source/example-career-center",
+      "source_kind": "provider_material",
+      "retrieved_at": "2026-10-31T12:00:00Z",
+      "language_hint": "en",
+      "content_sha256": "eef27fdc377b5b92a3788e37685b12668d236e83a197e845bdb9e7ce8904a73e",
+      "blocks": [
+        {
+          "block_id": "b1",
+          "text": "Example Career Center. Initial consultations are free. Follow-up appointments cost $50."
+        }
+      ],
+      "provenance": {
+        "record_ref": "suzi-synthetic:record/0001",
+        "origin_kind": "provider_publication",
+        "collected_by_ref": "suzi-synthetic:collector/example",
+        "collection_method": "manual_entry",
+        "verification_state": "unreviewed",
+        "rights_record_ref": "suzi-synthetic:rights/synthetic-example",
+        "handling_policy_ref": "suzi-synthetic:policy/public-synthetic",
+        "preparation": []
+      }
+    }
+  ]
+}
