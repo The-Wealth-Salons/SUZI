@@ -54,7 +54,7 @@ of the locked toolchain's supported ranges; tested on 20.19.2 with npm 11.21.1; 
 
 ```bash
 npm ci                                   # install exact locked dependencies
-npm test                                 # vitest run (86 tests, offline)
+npm test                                 # vitest run (full merged suite, offline)
 npm run typecheck                        # tsc --noEmit, strict
 npm run --silent example                 # offline MOCK example, JSON to stdout
 npm run --silent example > result.json   # save the result
