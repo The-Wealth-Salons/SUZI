@@ -88,7 +88,14 @@ function loadGa(id: string) {
     ad_personalization: "denied",
   });
   window.gtag("js", new Date());
-  window.gtag("config", id, { send_page_view: false, allow_google_signals: false });
+  // Pin page_location to the bare path: gtag otherwise attaches the full
+  // URL (query string included) to every event, bypassing the prop
+  // sanitizer that strips query strings from page_path.
+  window.gtag("config", id, {
+    send_page_view: false,
+    allow_google_signals: false,
+    page_location: window.location.origin + window.location.pathname,
+  });
   const s = document.createElement("script");
   s.async = true;
   s.src = `https://www.googletagmanager.com/gtag/js?id=${id}`;
@@ -150,7 +157,11 @@ function emit(
   const props = sanitizeProps({ ...baseProps(), ...extra }, EVENT_PROPS);
   amp?.track(name, props);
   if (gaId && window.gtag) {
-    window.gtag("event", name === "page_viewed" ? "page_view" : name, props);
+    window.gtag("event", name === "page_viewed" ? "page_view" : name, {
+      ...props,
+      page_location: window.location.origin + window.location.pathname,
+      page_referrer: "",
+    });
   }
   return true;
 }

@@ -6,14 +6,20 @@ export const CONSENT_VERSION = "2026-11-v1";
 type Listener = (s: ConsentState) => void;
 const listeners = new Set<Listener>();
 
+// Session-only fallback: when storage is unavailable (blocked cookies /
+// private mode), the choice is kept in memory for this page session so the
+// banner state and the analytics gate agree. Nothing is persisted.
+let memoryConsent: ConsentState | null = null;
+
 export function getConsent(): ConsentState {
   if (typeof window === "undefined") return "unset";
   try {
     const v = window.localStorage.getItem(CONSENT_KEY);
-    return v === "granted" || v === "denied" ? v : "unset";
+    if (v === "granted" || v === "denied") return v;
   } catch {
-    return "unset";
+    /* storage unavailable: fall through to the session-only value */
   }
+  return memoryConsent ?? "unset";
 }
 
 export function hasConsent(): boolean {
@@ -21,10 +27,11 @@ export function hasConsent(): boolean {
 }
 
 export function setConsent(s: "granted" | "denied") {
+  memoryConsent = s;
   try {
     window.localStorage.setItem(CONSENT_KEY, s);
   } catch {
-    /* storage unavailable: treat as session-only */
+    /* storage unavailable: session-only, held in memory above */
   }
   listeners.forEach((l) => l(s));
 }

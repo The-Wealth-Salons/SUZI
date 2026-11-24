@@ -135,3 +135,26 @@ describe("consent revocation during initialization", () => {
     expect(track).not.toHaveBeenCalled();
   });
 });
+
+describe("session-only consent fallback", () => {
+  it("retains the choice in memory when localStorage is unavailable", async () => {
+    const throwing = {
+      getItem: () => { throw new Error("blocked"); },
+      setItem: () => { throw new Error("blocked"); },
+      removeItem: () => { throw new Error("blocked"); },
+    };
+    const original = window.localStorage;
+    Object.defineProperty(window, "localStorage", { value: throwing, configurable: true });
+    try {
+      const consent = await import("@/lib/analytics/consent");
+      consent.setConsent("granted");
+      expect(consent.getConsent()).toBe("granted");
+      expect(consent.hasConsent()).toBe(true);
+      consent.setConsent("denied");
+      expect(consent.getConsent()).toBe("denied");
+      expect(consent.hasConsent()).toBe(false);
+    } finally {
+      Object.defineProperty(window, "localStorage", { value: original, configurable: true });
+    }
+  });
+});
