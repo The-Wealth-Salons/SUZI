@@ -1,0 +1,5 @@
+* text=auto eol=lf
+prompts/** text eol=lf
+contracts/** text eol=lf
+examples/** text eol=lf
+tests/**/fixtures/** text eol=lf
