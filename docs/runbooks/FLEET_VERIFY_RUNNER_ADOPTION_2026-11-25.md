@@ -58,24 +58,32 @@ visible, blocking, never dressed as a pass.
 
 ## 4. The wiring filed by this PR
 
-- **Trusted plan:** `scripts/fleet-verify/SUZI-ci.manifest.json` — an
-  extraction manifest (manifest_version 1) produced by the pinned runner's
-  own `extract_checks_job.py` from `.github/workflows/ci.yml`, job `ci`,
-  SHA-256 `0c078ded7bcf7330595a36d88fd8b22b6175b6dfeb3d236c86f36de85d90699c`.
-  One declared amendment to the raw extraction: the workflow sets no
-  `timeout-minutes:`, the extractor therefore emits
-  `job_timeout_minutes: null`, and the runner refuses a null timeout
-  ("invalid trusted job timeout", inaugural attempt
-  `ci-unblock-2026-11-25-suzi11-exec`, NO_RESULT, 0 steps). The manifest
-  pins `job_timeout_minutes: 45` — the fleet pattern value
-  (thebrainconsole#210) — an execution bound only; no step, command, or
-  flag changed.
+- **Trusted plan:** `scripts/fleet-verify/SUZI-ci.manifest.json` — a
+  **command manifest** (manifest_version 2, `source_mode:
+  command-manifest`, `workflow_retired: true`), SHA-256
+  `b4dda69ecd1f722884008227febf68b7bb8ba090e020d9bd3c85ebe223a77d62`.
+- **Why a command manifest, not a workflow extraction:** the workflow sets
+  no `timeout-minutes:`, so the pinned extractor emits
+  `job_timeout_minutes: null`, which the runner refuses outright
+  ("invalid trusted job timeout", attempt `ci-unblock-2026-11-25-suzi11-exec`,
+  NO_RESULT, 0 steps); and pinning a timeout into the extraction breaks the
+  runner's extraction-equality check instead ("candidate workflow/plan
+  differs from the controller-pinned manifest", attempt
+  `ci-unblock-2026-11-25-suzi11b-exec`, NO_RESULT, 0 steps). The command
+  manifest therefore pins, as reviewed commands, the job's deterministic
+  gate — the smoke check, verbatim — with `job_timeout_minutes: 45` (the
+  fleet pattern value, thebrainconsole#210). The checkout step is
+  provisioning, not enrolled: the worker materializes the exact merge tree
+  itself. `workflow_retired` records that the workflow no longer produces
+  this context (Actions disabled org-wide); the file itself is not edited,
+  and the manifest pins its blob so any future drift requires
+  reconciliation.
 - **Reviewed source:** `.github/workflows/ci.yml` on main @
   `600c5f3a6d1e815a1c963fc7633ff4a0e6b87aed`, workflow blob
   `024c1da278c04d3d2a91fe404bc8e5ae7a6b4786` (pinned in the manifest; the
   runner refuses to run if the workflow in the tree being verified has
   drifted from it).
-- The job extracts cleanly: no workflow/job `defaults` or `env`, no
+- The job itself is simple: no workflow/job `defaults` or `env`, no
   unsupported job semantics, `runs-on: ubuntu-latest`, two steps
   (checkout provisioning + the smoke check).
 

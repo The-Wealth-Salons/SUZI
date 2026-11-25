@@ -1,33 +1,24 @@
 {
- "manifest_version": 1,
- "workflow_path": ".github/workflows/ci.yml",
- "workflow_blob_sha": "024c1da278c04d3d2a91fe404bc8e5ae7a6b4786",
+ "authority_url": "https://github.com/The-Wealth-Salons/SUZI/blob/600c5f3a6d1e815a1c963fc7633ff4a0e6b87aed/.github/workflows/ci.yml",
+ "job_env": {},
  "job_id": "ci",
  "job_name_expression": "ci",
- "job_env": {},
  "job_timeout_minutes": 45,
+ "manifest_version": 2,
+ "reviewed_source_sha": "600c5f3a6d1e815a1c963fc7633ff4a0e6b87aed",
+ "source_mode": "command-manifest",
  "steps": [
   {
-   "name": "Checkout",
-   "id": null,
-   "kind": "uses",
-   "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
-   "run": null,
-   "if": null,
    "env": {},
-   "working_directory": null,
-   "with": {}
-  },
-  {
-   "name": "Smoke check",
-   "id": null,
+   "if": null,
    "kind": "run",
-   "uses": null,
+   "name": "Smoke check",
    "run": "set -eu\ntest -s README.md\ntest -s LICENSE\ntest -d docs\nfind docs -type f -name '*.md' | grep -q .\necho \"Smoke check passed: README, LICENSE, and docs markdown are present.\"\n",
-   "if": null,
-   "env": {},
-   "working_directory": null,
-   "with": {}
+   "uses": null,
+   "working_directory": null
   }
- ]
+ ],
+ "workflow_blob_sha": "024c1da278c04d3d2a91fe404bc8e5ae7a6b4786",
+ "workflow_path": ".github/workflows/ci.yml",
+ "workflow_retired": true
 }
