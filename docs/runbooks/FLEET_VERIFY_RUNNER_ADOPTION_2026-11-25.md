@@ -83,6 +83,15 @@ visible, blocking, never dressed as a pass.
   `024c1da278c04d3d2a91fe404bc8e5ae7a6b4786` (pinned in the manifest; the
   runner refuses to run if the workflow in the tree being verified has
   drifted from it).
+- **Toolchain pins:** `.nvmrc` (`22.23.2`) and `.bun-version` (`1.4.0`),
+  filed by this PR. The runner measures the sandbox runtime against the
+  repo's exact pins and fails closed on any difference ("runtime differs
+  from exact repository pins", attempt `ci-unblock-2026-11-25-suzi11c-exec`
+  before these files were added); this repo carried neither pin. The pins
+  name the fleet toolchain of record — the same values every enrolled repo
+  carries (controlplane, our-bible, thebrainconsole) — and change no
+  application behavior: this tree has no package manager, lockfile, or
+  build for them to act on today.
 - The job itself is simple: no workflow/job `defaults` or `env`, no
   unsupported job semantics, `runs-on: ubuntu-latest`, two steps
   (checkout provisioning + the smoke check).
