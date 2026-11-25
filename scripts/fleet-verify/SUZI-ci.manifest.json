@@ -1,0 +1,33 @@
+{
+ "manifest_version": 1,
+ "workflow_path": ".github/workflows/ci.yml",
+ "workflow_blob_sha": "024c1da278c04d3d2a91fe404bc8e5ae7a6b4786",
+ "job_id": "ci",
+ "job_name_expression": "ci",
+ "job_env": {},
+ "job_timeout_minutes": null,
+ "steps": [
+  {
+   "name": "Checkout",
+   "id": null,
+   "kind": "uses",
+   "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+   "run": null,
+   "if": null,
+   "env": {},
+   "working_directory": null,
+   "with": {}
+  },
+  {
+   "name": "Smoke check",
+   "id": null,
+   "kind": "run",
+   "uses": null,
+   "run": "set -eu\ntest -s README.md\ntest -s LICENSE\ntest -d docs\nfind docs -type f -name '*.md' | grep -q .\necho \"Smoke check passed: README, LICENSE, and docs markdown are present.\"\n",
+   "if": null,
+   "env": {},
+   "working_directory": null,
+   "with": {}
+  }
+ ]
+}
