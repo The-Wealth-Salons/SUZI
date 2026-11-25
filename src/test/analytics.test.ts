@@ -195,3 +195,23 @@ describe("consent precedence: failed writes and cleared storage", () => {
     expect(consent.hasConsent()).toBe(false);
   });
 });
+
+describe("GA page_location sanitization", () => {
+  it("sends the sanitized path and falls back to the bare origin when the sanitizer drops it", async () => {
+    vi.stubEnv("VITE_SUZI_GA4_MEASUREMENT_ID", "G-ABC1234");
+    setConsent("granted");
+    expect(await a.startAnalytics()).toBe(true);
+    const events = () =>
+      (window.dataLayer ?? []).filter((e) => (e as unknown[])[0] === "event") as unknown[][];
+    window.history.pushState({}, "", "/pinq");
+    a.trackPageView("pinq");
+    let last = events().at(-1);
+    expect((last?.[2] as Record<string, unknown>)["page_location"]).toBe(window.location.origin + "/pinq");
+    window.history.pushState({}, "", "/user@example.com");
+    a.trackPageView("profile");
+    last = events().at(-1);
+    expect((last?.[2] as Record<string, unknown>)["page_location"]).toBe(window.location.origin + "/");
+    expect(JSON.stringify(last?.[2])).not.toContain("@");
+    window.history.pushState({}, "", "/");
+  });
+});
