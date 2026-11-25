@@ -158,3 +158,40 @@ describe("session-only consent fallback", () => {
     }
   });
 });
+
+describe("consent precedence: failed writes and cleared storage", () => {
+  const throwingWrites = (store: Map<string, string>) => ({
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: () => { throw new Error("quota"); },
+    removeItem: (k: string) => { store.delete(k); },
+  });
+
+  it("honors the session choice when its storage write fails, in both directions", async () => {
+    const consent = await import("@/lib/analytics/consent");
+    const store = new Map<string, string>([[consent.CONSENT_KEY, "granted"]]);
+    const original = window.localStorage;
+    Object.defineProperty(window, "localStorage", { value: throwingWrites(store), configurable: true });
+    try {
+      consent.setConsent("denied");
+      expect(consent.getConsent()).toBe("denied");
+      expect(consent.hasConsent()).toBe(false);
+      store.set(consent.CONSENT_KEY, "denied");
+      consent.setConsent("granted");
+      expect(consent.getConsent()).toBe("granted");
+      expect(consent.hasConsent()).toBe(true);
+    } finally {
+      Object.defineProperty(window, "localStorage", { value: original, configurable: true });
+      consent.setConsent("denied");
+      localStorage.clear();
+    }
+  });
+
+  it("treats externally cleared storage as no consent, not the remembered grant", async () => {
+    const consent = await import("@/lib/analytics/consent");
+    consent.setConsent("granted");
+    expect(consent.getConsent()).toBe("granted");
+    localStorage.clear();
+    expect(consent.getConsent()).toBe("unset");
+    expect(consent.hasConsent()).toBe(false);
+  });
+});

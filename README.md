@@ -47,8 +47,9 @@ There are two adapters:
 
 ## Requirements
 
-Node.js **20.19+ on the 20 line, 22.12+ on the 22 line, or 24+** (the intersection
-of the locked toolchain's supported ranges; tested on 20.19.2 with npm 11.21.1; see `.nvmrc`).
+Node.js **22.12 or newer** (the intersection of the merged dependency graph's
+supported ranges — the website's `@tanstack/react-start` requires >=22.12.0;
+see `.nvmrc`). The resource-extract task code itself also runs on Node 20.19+.
 
 ## Commands
 

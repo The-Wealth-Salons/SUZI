@@ -157,9 +157,13 @@ function emit(
   const props = sanitizeProps({ ...baseProps(), ...extra }, EVENT_PROPS);
   amp?.track(name, props);
   if (gaId && window.gtag) {
+    // page_location is built from the SANITIZED page_path (query/fragment
+    // stripped, email/URL-like values rejected by the sanitizer), never
+    // from the raw location: a rejected path falls back to the bare origin.
+    const cleanPath = typeof props["page_path"] === "string" ? props["page_path"] : "/";
     window.gtag("event", name === "page_viewed" ? "page_view" : name, {
       ...props,
-      page_location: window.location.origin + window.location.pathname,
+      page_location: window.location.origin + cleanPath,
       page_referrer: "",
     });
   }
