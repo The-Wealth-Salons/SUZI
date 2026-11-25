@@ -47,9 +47,11 @@ There are two adapters:
 
 ## Requirements
 
-Node.js **22.12 or newer** (the intersection of the merged dependency graph's
-supported ranges — the website's `@tanstack/react-start` requires >=22.12.0;
-see `.nvmrc`). The resource-extract task code itself also runs on Node 20.19+.
+Node.js **22.13+ on the 22 line, or 24+** (the intersection of the locked
+dependency graph's engine ranges — `@tanstack/react-start` requires
+>=22.12.0 and the locked ESLint/rolldown tooling requires ^22.13.0 on the
+22 line, while Vitest excludes Node 23; tested on 24.22.1, see `.nvmrc`).
+The resource-extract task code itself also runs on Node 20.19+.
 
 ## Commands
 
