@@ -5,7 +5,7 @@
  "job_id": "ci",
  "job_name_expression": "ci",
  "job_env": {},
- "job_timeout_minutes": null,
+ "job_timeout_minutes": 45,
  "steps": [
   {
    "name": "Checkout",

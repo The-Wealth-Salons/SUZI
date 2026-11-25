@@ -61,7 +61,15 @@ visible, blocking, never dressed as a pass.
 - **Trusted plan:** `scripts/fleet-verify/SUZI-ci.manifest.json` — an
   extraction manifest (manifest_version 1) produced by the pinned runner's
   own `extract_checks_job.py` from `.github/workflows/ci.yml`, job `ci`,
-  SHA-256 `8f0d29ee20ed39998ac14cee969b71351f7d620f15b680db3141c01d2dcad1c5`.
+  SHA-256 `0c078ded7bcf7330595a36d88fd8b22b6175b6dfeb3d236c86f36de85d90699c`.
+  One declared amendment to the raw extraction: the workflow sets no
+  `timeout-minutes:`, the extractor therefore emits
+  `job_timeout_minutes: null`, and the runner refuses a null timeout
+  ("invalid trusted job timeout", inaugural attempt
+  `ci-unblock-2026-11-25-suzi11-exec`, NO_RESULT, 0 steps). The manifest
+  pins `job_timeout_minutes: 45` — the fleet pattern value
+  (thebrainconsole#210) — an execution bound only; no step, command, or
+  flag changed.
 - **Reviewed source:** `.github/workflows/ci.yml` on main @
   `600c5f3a6d1e815a1c963fc7633ff4a0e6b87aed`, workflow blob
   `024c1da278c04d3d2a91fe404bc8e5ae7a6b4786` (pinned in the manifest; the
