@@ -83,15 +83,27 @@ visible, blocking, never dressed as a pass.
   `024c1da278c04d3d2a91fe404bc8e5ae7a6b4786` (pinned in the manifest; the
   runner refuses to run if the workflow in the tree being verified has
   drifted from it).
-- **Toolchain pins:** `.nvmrc` (`22.23.2`) and `.bun-version` (`1.4.0`),
-  filed by this PR. The runner measures the sandbox runtime against the
-  repo's exact pins and fails closed on any difference ("runtime differs
-  from exact repository pins", attempt `ci-unblock-2026-11-25-suzi11c-exec`
-  before these files were added); this repo carried neither pin. The pins
-  name the fleet toolchain of record — the same values every enrolled repo
-  carries (controlplane, our-bible, thebrainconsole) — and change no
-  application behavior: this tree has no package manager, lockfile, or
-  build for them to act on today.
+- **Toolchain pins:** `.bun-version` (`1.4.0`) is **newly added**;
+  `.nvmrc` **existed at `20.19.2` and is raised to `22.23.2`** by this PR.
+  The runner measures the sandbox runtime against the repo's exact pins
+  and fails closed on any difference ("runtime differs from exact
+  repository pins", attempt `ci-unblock-2026-11-25-suzi11c-exec` before
+  these files were in the tree), and the fleet sandbox carries exactly
+  one Node runtime — 22.23.2, the toolchain of record every enrolled repo
+  pins (controlplane, our-bible, thebrainconsole). The `.nvmrc` raise is
+  a real change, stated plainly: pin-following local tooling (nvm) will
+  now select Node 22.23.2 instead of 20.19.2. That version is inside the
+  range `package.json` declares (`^20.19.0 || ^22.12.0 || >=24.0.0`) and
+  the range the README documents as supported; the README's "tested on
+  20.19.2" line is unchanged and remains the record of what the repo's
+  own suite was last tested on. This repo does have an npm toolchain
+  (`package.json` + `package-lock.json`; `npm test` and
+  `npm run typecheck` per the README) — it is simply not what the `ci`
+  context ever executed: the enrolled gate is the `ci` job's smoke check,
+  verbatim and unchanged, and this adoption does not broaden it. (The
+  workflow file's own comment claims the tree has no package manager or
+  tests; that comment is stale against the current tree — a pre-existing
+  discrepancy this PR notes but does not fix.)
 - The job itself is simple: no workflow/job `defaults` or `env`, no
   unsupported job semantics, `runs-on: ubuntu-latest`, two steps
   (checkout provisioning + the smoke check).
