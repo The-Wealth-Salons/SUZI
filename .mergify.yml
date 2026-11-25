@@ -50,4 +50,4 @@ merge_protections:
       - base = main
       - -draft
     success_conditions:
-      - check-success = @github-actions/ci
+      - check-success = @bpm-verify-poster/ci
