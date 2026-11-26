@@ -1,6 +1,6 @@
 # GAP-SYNC-TARGET — resolution record (2026-11-23)
 
-**Status:** Resolved on evidence as narrowed in §2, with the canonical surface ruled (§5). The Lovable→GitHub connection path that an earlier version of this record prescribed is **superseded and must not be executed**: B. ruled on 2026-11-23 (~13:40 PT; PR comment 7115649971) to **download the code instead**, and the import is filed as SUZI#10 — The-Wealth-Salons/SUZI is SUZI's code home. No owner connect act remains outstanding under this record.
+**Status:** Resolved on evidence as narrowed in §2 — resolution (1) records only the verified, access-limited findings and the sync target remains unknown; resolution (2) reads as a deliberate separate home on the accessible evidence, without establishing that no repository was ever connected (§3) — with the canonical surface ruled (§5). The Lovable→GitHub connection path that an earlier version of this record prescribed is **superseded and must not be executed**: B. ruled on 2026-11-23 (~13:40 PT; PR comment 7115649971) to **download the code instead**, and the import is filed as SUZI#10 — The-Wealth-Salons/SUZI is SUZI's code home. No owner connect act remains outstanding under this record.
 
 **Custody:** the Suzi Space work item "repoint and prove the connection" was Charon-owned. Charon is out; Kali Ma covers the desk; Ymir takes custody of the item for this resolution (2026-11-23).
 
