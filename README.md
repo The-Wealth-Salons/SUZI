@@ -47,14 +47,17 @@ There are two adapters:
 
 ## Requirements
 
-Node.js **20.19+ on the 20 line, 22.12+ on the 22 line, or 24+** (the intersection
-of the locked toolchain's supported ranges; tested on 20.19.2 with npm 11.21.1; see `.nvmrc`).
+Node.js **22.13+ on the 22 line, or 24+** (the intersection of the locked
+dependency graph's engine ranges — `@tanstack/react-start` requires
+>=22.12.0 and the locked ESLint/rolldown tooling requires ^22.13.0 on the
+22 line, while Vitest excludes Node 23; tested on 24.22.1, see `.nvmrc`).
+The resource-extract task code itself also runs on Node 20.19+.
 
 ## Commands
 
 ```bash
 npm ci                                   # install exact locked dependencies
-npm test                                 # vitest run (86 tests, offline)
+npm test                                 # vitest run (full merged suite, offline)
 npm run typecheck                        # tsc --noEmit, strict
 npm run --silent example                 # offline MOCK example, JSON to stdout
 npm run --silent example > result.json   # save the result

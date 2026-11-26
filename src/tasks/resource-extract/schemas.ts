@@ -10,7 +10,7 @@ import type {
   ResourceExtractionResultData,
 } from "./types.js";
 
-const addFormats = addFormatsModule.default;
+const addFormats = addFormatsModule["default"];
 
 const CONTRACT_DIR = new URL(
   "../../../contracts/tasks/resource.extract.v1/",

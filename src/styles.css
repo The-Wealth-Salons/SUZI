@@ -1,0 +1,103 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* SUZI identity: forest #0B3B38, cream #FBF6ED, warm gold #EBA13F. All tokens oklch. */
+
+@theme inline {
+  --font-display: "EB Garamond", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-gold: var(--gold);
+  --color-forest: var(--forest);
+  --color-cream: var(--cream);
+  --color-pinq: var(--pinq);
+  --color-pinq-soft: var(--pinq-soft);
+  --color-pinq-deep: var(--pinq-deep);
+  --color-plum: var(--plum);
+}
+
+:root {
+  --radius: 0.5rem;
+  --forest: oklch(0.3237 0.0507 186.5);
+  --cream: oklch(0.9757 0.0137 81.8);
+  --gold: oklch(0.7703 0.1416 69.5);
+  --pinq: oklch(0.78 0.11 0);
+  --pinq-soft: oklch(0.93 0.035 0);
+  --pinq-deep: oklch(0.56 0.15 0);
+  --plum: oklch(0.36 0.11 340);
+
+  --background: var(--cream);
+  --foreground: var(--forest);
+  --card: oklch(0.99 0.008 81.8);
+  --card-foreground: var(--forest);
+  --popover: var(--card);
+  --popover-foreground: var(--forest);
+  --primary: var(--forest);
+  --primary-foreground: var(--cream);
+  --secondary: oklch(0.94 0.02 81.8);
+  --secondary-foreground: var(--forest);
+  --muted: oklch(0.94 0.02 81.8);
+  --muted-foreground: oklch(0.45 0.035 186.5);
+  --accent: var(--gold);
+  --accent-foreground: var(--forest);
+  --destructive: oklch(0.52 0.18 27);
+  --destructive-foreground: var(--cream);
+  --border: oklch(0.87 0.025 81.8);
+  --input: oklch(0.84 0.025 81.8);
+  --ring: var(--gold);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+}
+
+@utility eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+@utility rule-gold {
+  height: 1px;
+  width: 3rem;
+  background: var(--color-gold);
+}
